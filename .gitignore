@@ -19,6 +19,8 @@
 *.tar.gz
 *.rar
 
+*.env
+
 !gradle-wrapper.jar
 
 hs_err_pid*

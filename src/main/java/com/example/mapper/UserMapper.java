@@ -17,4 +17,7 @@ public interface UserMapper {
 
     @Mapping(target = "username", source = "login")
     AuthorizedUserResponse toAuthorizedUserResponse(User user);
+
+    @Mapping(target = "username", source = "name")
+    AuthorizedUserResponse toAuthorizedUserResponse(String name);
 }

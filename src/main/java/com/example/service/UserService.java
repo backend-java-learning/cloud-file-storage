@@ -26,7 +26,6 @@ public class UserService {
     private UserRepository userRepository;
     private UserMapper userMapper;
     private PasswordEncoder passwordEncoder;
-    private AuthenticationManager authenticationManager;
 
     public AuthorizedUserResponse createUser(AuthorizeUserRequest authorizeUserRequest) {
         try {
@@ -41,20 +40,5 @@ public class UserService {
 
     public AuthorizedUserResponse getInfoAboutCurrentUser(Authentication authentication) {
         return userMapper.toAuthorizedUserResponse(authentication.getName());
-    }
-
-    public AuthorizedUserResponse authenticate(AuthorizeUserRequest authorizeUserRequest) {
-        UsernamePasswordAuthenticationToken authToken =
-                new UsernamePasswordAuthenticationToken(authorizeUserRequest.getUsername(), authorizeUserRequest.getPassword());
-        Authentication authentication = authenticationManager.authenticate(authToken);
-        SecurityContext context = SecurityContextHolder.createEmptyContext();
-        context.setAuthentication(authentication);
-        SecurityContextHolder.setContext(context);
-        Optional<User> userOptional = userRepository.findByLogin(authorizeUserRequest.getUsername());
-        if (userOptional.isEmpty()) {
-            throw new InvalidCredentialsException("Неверный пользователь");
-        }
-        User user = userOptional.get();
-        return userMapper.toAuthorizedUserResponse(user);
     }
 }

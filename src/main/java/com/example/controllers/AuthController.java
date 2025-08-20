@@ -2,6 +2,7 @@ package com.example.controllers;
 
 import com.example.dto.AuthorizeUserRequest;
 import com.example.dto.AuthorizedUserResponse;
+import com.example.service.AuthorizationService;
 import com.example.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.AllArgsConstructor;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
     private UserService userService;
+    private AuthorizationService authorizationService;
 
     @PostMapping("/sign-up")
     public ResponseEntity<AuthorizedUserResponse> signUp(@RequestBody AuthorizeUserRequest authorizeUserRequest) {
@@ -27,7 +29,7 @@ public class AuthController {
     @PostMapping("/sign-in")
     public ResponseEntity<AuthorizedUserResponse> signIn(@RequestBody AuthorizeUserRequest authorizeUserRequest,
                                                          HttpServletRequest request) {
-        AuthorizedUserResponse authorizedUser = userService.authenticate(authorizeUserRequest);
+        AuthorizedUserResponse authorizedUser = authorizationService.authenticate(authorizeUserRequest);
         request.getSession(true).setAttribute(
                 HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY,
                 SecurityContextHolder.getContext()

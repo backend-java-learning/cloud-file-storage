@@ -25,6 +25,11 @@ public class GlobalExceptionHandler {
         return setMessage(ResponseEntity.status(HttpStatus.UNAUTHORIZED), badCredentialsException);
     }
 
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<ErrorResponse> handleRuntimeException(RuntimeException runtimeException) {
+        return setMessage(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR), runtimeException);
+    }
+
     private <T extends RuntimeException> ResponseEntity<ErrorResponse> setMessage(ResponseEntity.BodyBuilder bodyBuilder,
                                                                                   T exception) {
         return bodyBuilder.body(

@@ -14,4 +14,9 @@ public interface ResourceInfoMapper {
     @Mapping(target = "type", source = "type")
     @Mapping(target = "size", source = "size")
     ResourceInfoResponse toResourceInfo(Long size, String path, String name, ResourceType type);
+
+    @Mapping(target = "path", source = "path")
+    @Mapping(target = "name", source = "name")
+    @Mapping(target = "type", source = "type")
+    ResourceInfoResponse toResourceInfo(String path, String name, ResourceType type);
 }

@@ -35,34 +35,6 @@ public class MinioService {
         }
     }
 
-    public ResourceInfoResponse getResourceInfo(String resourceName) {
-        return resourceName.endsWith("/")
-                ? getDirectoryInfo(resourceName)
-                : getFileInfo(resourceName);
-    }
-
-    private ResourceInfoResponse getDirectoryInfo(String folderName) {
-        return null;
-    }
-
-    private ResourceInfoResponse getFileInfo(String fileName) {
-        try {
-            StatObjectResponse statObjectResponse = minioClient.statObject(
-                    StatObjectArgs.builder()
-                            .bucket("my-bucket")
-                            .object(fileName)
-                            .build()
-            );
-            String fileNameWithPath = statObjectResponse.object();
-            int lastIndexOfSplitter = fileNameWithPath.lastIndexOf("/");
-            String folderName = fileNameWithPath.substring(0, lastIndexOfSplitter);
-            String fileName1 = fileNameWithPath.substring(lastIndexOfSplitter + 1, fileNameWithPath.length() - 1);
-            return resourceInfoMapper.toResourceInfo(statObjectResponse.size(), folderName, fileName1, ResourceType.FILE);
-        } catch (Exception e) {
-            return null;
-        }
-    }
-
 
     public void createBucket(String name) throws ServerException, InsufficientDataException, ErrorResponseException, IOException, NoSuchAlgorithmException, InvalidKeyException, InvalidResponseException, XmlParserException, InternalException {
         minioClient.makeBucket(

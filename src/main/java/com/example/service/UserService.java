@@ -29,8 +29,7 @@ public class UserService {
             User user = userMapper.toUser(authorizeUserRequest);
             user.setPassword(passwordEncoder.encode(authorizeUserRequest.getPassword()));
             User savedUser = userRepository.save(user);
-            folderName = "user-%s-files".formatted(savedUser.getId());
-                    //savedUser.getUsername();
+            folderName = "user-%s-files/".formatted(savedUser.getId());
             minioService.createFolder(folderName);
             return userMapper.toAuthorizedUserResponse(savedUser);
         } catch (DataIntegrityViolationException e) {

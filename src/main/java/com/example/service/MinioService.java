@@ -1,7 +1,5 @@
 package com.example.service;
 
-import com.example.dto.ResourceInfoResponse;
-import com.example.dto.enums.ResourceType;
 import com.example.mapper.ResourceInfoMapper;
 import io.minio.*;
 import io.minio.errors.*;
@@ -20,29 +18,6 @@ import java.util.List;
 public class MinioService {
 
     private MinioClient minioClient;
-    private ResourceInfoMapper resourceInfoMapper;
-
-    public StatObjectResponse getObject(String name) {
-        try {
-            return minioClient.statObject(
-                    StatObjectArgs.builder()
-                            .bucket("my-bucket")
-                            .object(name)
-                            .build()
-            );
-        } catch (Exception e) {
-            return null;
-        }
-    }
-
-
-    public void createBucket(String name) throws ServerException, InsufficientDataException, ErrorResponseException, IOException, NoSuchAlgorithmException, InvalidKeyException, InvalidResponseException, XmlParserException, InternalException {
-        minioClient.makeBucket(
-                MakeBucketArgs.builder()
-                        .bucket(name)
-                        .build()
-        );
-    }
 
     public ObjectWriteResponse createFolder(String folderName) throws ServerException, InsufficientDataException, ErrorResponseException, IOException, NoSuchAlgorithmException, InvalidKeyException, InvalidResponseException, XmlParserException, InternalException {
         return minioClient.putObject(

@@ -30,6 +30,16 @@ public class GlobalExceptionHandler {
         return setMessage(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR), runtimeException);
     }
 
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleResourceNotFound(ResourceNotFoundException resourceNotFoundException) {
+        return setMessage(ResponseEntity.status(HttpStatus.NOT_FOUND), resourceNotFoundException);
+    }
+
+    @ExceptionHandler(InvalidPathException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidPath(InvalidPathException invalidPathException) {
+        return setMessage(ResponseEntity.badRequest(), invalidPathException);
+    }
+
     private <T extends RuntimeException> ResponseEntity<ErrorResponse> setMessage(ResponseEntity.BodyBuilder bodyBuilder,
                                                                                   T exception) {
         return bodyBuilder.body(

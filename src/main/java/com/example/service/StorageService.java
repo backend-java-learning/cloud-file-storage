@@ -5,7 +5,6 @@ import com.example.exception.ResourceNotFoundException;
 import com.example.exception.StorageException;
 import io.minio.*;
 import io.minio.errors.*;
-import io.minio.messages.DeleteError;
 import io.minio.messages.DeleteObject;
 import io.minio.messages.Item;
 import lombok.AllArgsConstructor;
@@ -57,23 +56,17 @@ public class StorageService {
     public void removeObjects(int userId, String bucket, String relativePath) {
         String key = addUserPrefix(userId, relativePath);
         var objectsToDelete = getDeleteObjects(bucket, key);
+        if (objectsToDelete.isEmpty()) {
+            throw new ResourceNotFoundException("The directory [%s] doesn't exist".formatted(relativePath));
+        }
         var deleteErrors = minioClient.removeObjects(
                 RemoveObjectsArgs.builder()
                         .bucket(bucket)
                         .objects(objectsToDelete)
                         .build()
         );
-        List<String> failed = new ArrayList<>();
-        for (Result<DeleteError> result : deleteErrors) {
-            try {
-                DeleteError error = result.get();
-                failed.add(stripPrefix(error.objectName()));
-            } catch (Exception e) {
-                throw new StorageException("Unexpected issue while processing delete results", e);
-            }
-        }
-        if (!failed.isEmpty()) {
-            throw new DeleteResourceException(failed);
+        if (StreamSupport.stream(deleteErrors.spliterator(), false).findAny().isPresent()) {
+            throw new DeleteResourceException("Unexpected issue while deleting objects by key [%s]".formatted(relativePath));
         }
     }
 
@@ -138,41 +131,20 @@ public class StorageService {
         );
     }
 
-    private Iterable<DeleteObject> getDeleteObjects(int userId, String bucket, String prefix) {
-        Iterable<Result<Item>> results = listObjects(userId, bucket, prefix, true);
-        var streamSupplier = StreamSupport.stream(results.spliterator(), false)
-                .map(result -> {
-                    try {
-                        Item resultItem = result.get();
-                        return new DeleteObject(resultItem.objectName());
-                    } catch (Exception ex) {
-                        //TODO: think about it
-                        log.error("");
-                        return null;
-                    }
-                });
-        return streamSupplier::iterator;
-    }
-
-    private Iterable<DeleteObject> getDeleteObjects(String bucket, String prefix) {
+    private List<DeleteObject> getDeleteObjects(String bucket, String prefix) {
         Iterable<Result<Item>> results = listObjects(bucket, prefix, true);
-        var streamSupplier = StreamSupport.stream(results.spliterator(), false)
-                .map(result -> {
-                    try {
-                        Item resultItem = result.get();
-                        return new DeleteObject(resultItem.objectName());
-                    } catch (Exception ex) {
-                        //TODO: think about it
-                        log.error("");
-                        return null;
-                    }
-                });
-        return streamSupplier::iterator;
-    }
-
-    private String stripPrefix(String objectKey) {
-        int idx = objectKey.indexOf("-files/");
-        return (idx != -1) ? objectKey.substring(idx + "-files/".length()) : objectKey;
+        List<DeleteObject> deleteObjects = new ArrayList<>();
+        for (Result<Item> result : results) {
+            try {
+                Item item = result.get();
+                deleteObjects.add(new DeleteObject(item.objectName()));
+            } catch (Exception e) {
+                log.error("Failed to process object for deletion in bucket [{}] with prefix [{}]", bucket, prefix, e);
+                throw new StorageException("Error while building delete objects list for bucket [%s], prefix [%s]"
+                        .formatted(bucket, prefix), e);
+            }
+        }
+        return deleteObjects;
     }
 
     private String addUserPrefix(int userId, String objectKey) {

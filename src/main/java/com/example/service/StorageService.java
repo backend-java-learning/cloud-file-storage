@@ -3,8 +3,10 @@ package com.example.service;
 import com.example.exception.ResourceNotFoundException;
 import io.minio.*;
 import io.minio.errors.*;
+import io.minio.messages.DeleteObject;
 import io.minio.messages.Item;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -15,14 +17,11 @@ import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import java.util.stream.StreamSupport;
 
+@Slf4j
 @Service
 @AllArgsConstructor
 public class StorageService {
 //    getObject(bucket, key)
-//
-//    deleteObject(bucket, key)
-//
-//    listObjects(bucket, prefix, recursive)
 //
 //    copyObject(bucket, fromKey, toKey)
 
@@ -39,6 +38,24 @@ public class StorageService {
                             .build()
             );
         }
+    }
+
+    public void removeObjects(String bucket, String key) {
+        var objectsToDelete = getDeleteObjects(bucket, key);
+        var deleteErrors = minioClient.removeObjects(
+                RemoveObjectsArgs.builder()
+                        .bucket(bucket)
+                        .objects(objectsToDelete)
+                        .build()
+        );
+    }
+
+    public void removeObject(String bucket, String key) throws ServerException, InsufficientDataException, ErrorResponseException, IOException, NoSuchAlgorithmException, InvalidKeyException, InvalidResponseException, XmlParserException, InternalException {
+        minioClient.removeObject(
+                RemoveObjectArgs.builder()
+                        .bucket(bucket)
+                        .object(key)
+                        .build());
     }
 
     public StatObjectResponse getStatObject(String bucket, String key) throws ServerException, InsufficientDataException,
@@ -64,14 +81,33 @@ public class StorageService {
     }
 
     public List<Result<Item>> getListObjects(String bucket, String prefix, boolean isRecursive) {
-        Iterable<Result<Item>> results =
-                minioClient.listObjects(
-                        ListObjectsArgs.builder()
-                                .bucket(bucket)
-                                .prefix(prefix)
-                                .recursive(isRecursive)
-                                .build()
-                );
+        Iterable<Result<Item>> results = listObjects(bucket, prefix, isRecursive);
         return StreamSupport.stream(results.spliterator(), false).toList();
+    }
+
+    private Iterable<Result<Item>> listObjects(String bucket, String prefix, boolean isRecursive) {
+        return minioClient.listObjects(
+                ListObjectsArgs.builder()
+                        .bucket(bucket)
+                        .prefix(prefix)
+                        .recursive(isRecursive)
+                        .build()
+        );
+    }
+
+    private Iterable<DeleteObject> getDeleteObjects(String bucket, String prefix) {
+        Iterable<Result<Item>> results = listObjects(bucket, prefix, true);
+        var streamSupplier = StreamSupport.stream(results.spliterator(), false)
+                .map(result -> {
+                    try {
+                        Item resultItem = result.get();
+                        return new DeleteObject(resultItem.objectName());
+                    } catch (Exception ex) {
+                        //TODO: think about it
+                        log.error("");
+                        return null;
+                    }
+                });
+        return streamSupplier::iterator;
     }
 }

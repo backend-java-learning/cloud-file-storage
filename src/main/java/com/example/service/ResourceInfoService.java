@@ -8,6 +8,7 @@ import io.minio.*;
 import io.minio.errors.*;
 import io.minio.messages.Item;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -15,11 +16,12 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
 
+@Slf4j
 @Service
 @AllArgsConstructor
 public class ResourceInfoService {
 
-    private StorageService minioClient;
+    private StorageService storageService;
     private ResourceInfoMapper resourceInfoMapper;
 
     public ResourceInfoResponse getResourceInfo(String bucket, String resourceName, int userId) throws ServerException,
@@ -31,9 +33,27 @@ public class ResourceInfoService {
                 : getFileInfo(bucket, resourceName);
     }
 
+    public void deleteResource(String bucket, String resourceName, int userId) throws ServerException, InsufficientDataException, ErrorResponseException, IOException, NoSuchAlgorithmException, InvalidKeyException, InvalidResponseException, XmlParserException, InternalException {
+        String key = "user-%s-files/%s".formatted(userId, resourceName);
+        if(resourceName.endsWith("/")) {
+            deleteObjects(bucket, key);
+            return;
+        }
+        deleteObject(bucket, key);
+    }
+
+    private void deleteObjects(String bucket, String key) {
+        storageService.removeObjects(bucket, key);
+    }
+
+    private void deleteObject(String bucket, String key) throws ServerException, InsufficientDataException, ErrorResponseException, IOException, NoSuchAlgorithmException, InvalidKeyException, InvalidResponseException, XmlParserException, InternalException {
+        storageService.removeObject(bucket, key);
+    }
+
     private ResourceInfoResponse getDirectoryInfo(String bucket, String folderName) {
-        List<Result<Item>> results = minioClient.getListObjects(bucket, folderName);
+        List<Result<Item>> results = storageService.getListObjects(bucket, folderName);
         if (results.isEmpty()) {
+            log.error("Directory [{}] doesn't exist in bucket [{}]", folderName, bucket);
             throw new ResourceNotFoundException("Directory doesn't exist");
         }
 
@@ -64,7 +84,7 @@ public class ResourceInfoService {
     }
 
     private ResourceInfoResponse getFileInfo(String bucket, String fileName) throws ServerException, InsufficientDataException, ErrorResponseException, IOException, NoSuchAlgorithmException, InvalidKeyException, InvalidResponseException, XmlParserException, InternalException {
-        StatObjectResponse statObjectResponse = minioClient.getStatObject(bucket, fileName);
+        StatObjectResponse statObjectResponse = storageService.getStatObject(bucket, fileName);
         String fileNameWithPath = statObjectResponse.object();
         int lastIndexOfSplitter = fileNameWithPath.lastIndexOf("/");
         String folderName = fileNameWithPath.substring(0, lastIndexOfSplitter + 1);

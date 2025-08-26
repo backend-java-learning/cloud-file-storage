@@ -35,10 +35,15 @@ public class GlobalExceptionHandler {
         return setMessage(ResponseEntity.badRequest(), invalidPathException);
     }
 
+    @ExceptionHandler(StorageException.class)
+    public ResponseEntity<ErrorResponse> handleStorageException(StorageException storageException) {
+        return setMessage(ResponseEntity.internalServerError(), "Something went wrong with storage");
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleRuntimeException(RuntimeException runtimeException) {
         //TODO: add loger
-        return setMessage(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR), "Something went wrong");
+        return setMessage(ResponseEntity.internalServerError(), "Something went wrong");
     }
 
     private <T extends RuntimeException> ResponseEntity<ErrorResponse> setMessage(ResponseEntity.BodyBuilder bodyBuilder,

@@ -5,15 +5,11 @@ import com.example.dto.enums.ResourceType;
 import com.example.exception.ResourceNotFoundException;
 import com.example.mapper.ResourceInfoMapper;
 import io.minio.*;
-import io.minio.errors.*;
 import io.minio.messages.Item;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.io.IOException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
 import java.util.List;
 
 @Slf4j
@@ -24,34 +20,30 @@ public class ResourceInfoService {
     private StorageService storageService;
     private ResourceInfoMapper resourceInfoMapper;
 
-    public ResourceInfoResponse getResourceInfo(String bucket, String resourceName, int userId) throws ServerException,
-            InsufficientDataException, ErrorResponseException, IOException, NoSuchAlgorithmException, InvalidKeyException,
-            InvalidResponseException, XmlParserException, InternalException {
-        resourceName = "user-%s-files/%s".formatted(userId, resourceName);
+    public ResourceInfoResponse getResourceInfo(String bucket, String resourceName, int userId) {
         return resourceName.endsWith("/")
-                ? getDirectoryInfo(bucket, resourceName)
-                : getFileInfo(bucket, resourceName);
+                ? getDirectoryInfo(userId, bucket, resourceName)
+                : getFileInfo(userId, bucket, resourceName);
     }
 
-    public void deleteResource(String bucket, String resourceName, int userId) throws ServerException, InsufficientDataException, ErrorResponseException, IOException, NoSuchAlgorithmException, InvalidKeyException, InvalidResponseException, XmlParserException, InternalException {
-        String key = "user-%s-files/%s".formatted(userId, resourceName);
-        if(resourceName.endsWith("/")) {
-            deleteObjects(bucket, key);
+    public void deleteResource(String bucket, String resourceName, int userId) {
+        if (resourceName.endsWith("/")) {
+            deleteObjects(userId, bucket, resourceName);
             return;
         }
-        deleteObject(bucket, key);
+        deleteObject(userId, bucket, resourceName);
     }
 
-    private void deleteObjects(String bucket, String key) {
-        storageService.removeObjects(bucket, key);
+    private void deleteObjects(int userId, String bucket, String key) {
+        storageService.removeObjects(userId, bucket, key);
     }
 
-    private void deleteObject(String bucket, String key) throws ServerException, InsufficientDataException, ErrorResponseException, IOException, NoSuchAlgorithmException, InvalidKeyException, InvalidResponseException, XmlParserException, InternalException {
-        storageService.removeObject(bucket, key);
+    private void deleteObject(int userId, String bucket, String key) {
+        storageService.removeObject(userId, bucket, key);
     }
 
-    private ResourceInfoResponse getDirectoryInfo(String bucket, String folderName) {
-        List<Result<Item>> results = storageService.getListObjects(bucket, folderName);
+    private ResourceInfoResponse getDirectoryInfo(int userId, String bucket, String folderName) {
+        List<Result<Item>> results = storageService.getListObjects(userId, bucket, folderName);
         if (results.isEmpty()) {
             log.error("Directory [{}] doesn't exist in bucket [{}]", folderName, bucket);
             throw new ResourceNotFoundException("Directory doesn't exist");
@@ -83,8 +75,8 @@ public class ResourceInfoService {
         return resourceInfoMapper.toResourceInfo(path, name, ResourceType.DIRECTORY);
     }
 
-    private ResourceInfoResponse getFileInfo(String bucket, String fileName) throws ServerException, InsufficientDataException, ErrorResponseException, IOException, NoSuchAlgorithmException, InvalidKeyException, InvalidResponseException, XmlParserException, InternalException {
-        StatObjectResponse statObjectResponse = storageService.getStatObject(bucket, fileName);
+    private ResourceInfoResponse getFileInfo(int userId, String bucket, String fileName) {
+        StatObjectResponse statObjectResponse = storageService.getStatObject(userId, bucket, fileName);
         String fileNameWithPath = statObjectResponse.object();
         int lastIndexOfSplitter = fileNameWithPath.lastIndexOf("/");
         String folderName = fileNameWithPath.substring(0, lastIndexOfSplitter + 1);

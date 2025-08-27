@@ -29,7 +29,7 @@ public class UploadController {
         if (!path.endsWith("/") && !path.isEmpty()) {
             throw new InvalidPathException("The path for folder have to end with '/'");
         }
-        List<ResourceInfoResponse> resourceInfoResponses = uploadService.uploadFile(user.getId(), "user-files", path, file);
+        List<ResourceInfoResponse> resourceInfoResponses = uploadService.uploadFile(user.getId(), path, file);
         return ResponseEntity.ok(resourceInfoResponses);
     }
 }

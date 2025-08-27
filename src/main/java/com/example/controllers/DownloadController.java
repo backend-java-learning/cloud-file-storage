@@ -3,7 +3,6 @@ package com.example.controllers;
 import com.example.dto.DownloadResult;
 import com.example.models.User;
 import com.example.service.DownloadService;
-import jakarta.servlet.http.HttpServletResponse;
 import lombok.AllArgsConstructor;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
@@ -25,7 +24,7 @@ public class DownloadController {
     @GetMapping("/resource/download")
     private ResponseEntity<Resource> downloadResource(@AuthenticationPrincipal User user,
                                                       @RequestParam String path) throws Exception {
-        DownloadResult result = downloadService.download(user.getId(), "user-files", path);
+        DownloadResult result = downloadService.download(user.getId(), path);
         return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
                 .header(HttpHeaders.CONTENT_DISPOSITION,

@@ -25,20 +25,20 @@ public class UserService {
     private StorageService storageService;
 
     @Transactional
-    public AuthorizedUserResponse registerUser(AuthorizeUserRequest authorizeUserRequest, String bucket) {
+    public AuthorizedUserResponse registerUser(AuthorizeUserRequest authorizeUserRequest) {
         Integer savedUserId = null;
         try {
             User user = userMapper.toUser(authorizeUserRequest);
             user.setPassword(passwordEncoder.encode(authorizeUserRequest.getPassword()));
             User savedUser = userRepository.save(user);
             savedUserId = savedUser.getId();
-            storageService.createEmptyFolder(savedUserId, bucket, "");
+            storageService.createEmptyFolder(savedUserId);
             return userMapper.toAuthorizedUserResponse(savedUser);
         } catch (DataIntegrityViolationException e) {
             throw new UserAlreadyExistsException("Пользователь с таким логином уже существует");
         } catch (Exception ex) {
-            if(savedUserId != null) {
-                storageService.removeObjects(savedUserId, bucket, "");
+            if (savedUserId != null) {
+                storageService.removeObjects(savedUserId);
             }
             throw new RuntimeException("Unexpected", ex);
         }

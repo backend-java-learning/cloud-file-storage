@@ -22,7 +22,7 @@ public class AuthController {
 
     @PostMapping("/sign-up")
     public ResponseEntity<AuthorizedUserResponse> signUp(@RequestBody AuthorizeUserRequest authorizeUserRequest) {
-        AuthorizedUserResponse createdUser = userService.registerUser(authorizeUserRequest, "user-files");
+        AuthorizedUserResponse createdUser = userService.registerUser(authorizeUserRequest);
         return ResponseEntity.status(HttpStatus.CREATED).body(createdUser);
     }
 

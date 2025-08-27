@@ -19,12 +19,12 @@ public class UploadService {
     private StorageService storageService;
     private ResourceInfoMapper resourceInfoMapper;
 
-    public List<ResourceInfoResponse> uploadFile(int userId, String bucket, String folderPath, MultipartFile file) {
-        if (storageService.getListObjects(userId, bucket, folderPath).isEmpty()) {
-            storageService.createEmptyFolder(userId, bucket, folderPath);
+    public List<ResourceInfoResponse> uploadFile(int userId, String folderPath, MultipartFile file) {
+        if (storageService.getListObjects(userId, folderPath).isEmpty()) {
+            storageService.createEmptyFolder(userId, folderPath);
         }
-        storageService.putObject(userId, bucket, folderPath, file);
-        StatObjectResponse statObjectResponse = storageService.getStatObject(userId, bucket, folderPath);
+        storageService.putObject(userId, folderPath, file);
+        StatObjectResponse statObjectResponse = storageService.getStatObject(userId, folderPath);
         ResourceInfoResponse resourceInfoResponse = resourceInfoMapper
                 .toResourceInfo(statObjectResponse.size(), folderPath, file.getOriginalFilename(), ResourceType.FILE);
         return List.of(resourceInfoResponse);

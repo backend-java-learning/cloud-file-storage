@@ -23,17 +23,17 @@ public class DownloadService {
 
     private StorageService storageService;
 
-    public DownloadResult download(int userId, String bucket, String objectKey) throws Exception {
-        return isDirectory(bucket, userId, objectKey)
-                ? downloadDirectoryAsZip(userId, bucket, objectKey)
-                : downloadFile(userId, bucket, objectKey);
+    public DownloadResult download(int userId, String objectKey) throws Exception {
+        return isDirectory(userId, objectKey)
+                ? downloadDirectoryAsZip(userId, objectKey)
+                : downloadFile(userId, objectKey);
     }
 
-    private DownloadResult downloadFile(int userId, String bucket, String objectKey) {
+    private DownloadResult downloadFile(int userId, String objectKey) {
         try {
-            InputStream stream = storageService.getObject(userId, bucket, objectKey);
+            InputStream stream = storageService.getObject(userId, objectKey);
             Resource resource = new InputStreamResource(stream);
-            StatObjectResponse stat = storageService.getStatObject(userId, bucket, objectKey);
+            StatObjectResponse stat = storageService.getStatObject(userId, objectKey);
             return new DownloadResult(
                     Paths.get(objectKey).getFileName().toString(),
                     resource,
@@ -45,14 +45,14 @@ public class DownloadService {
         }
     }
 
-    private DownloadResult downloadDirectoryAsZip(int userId, String bucket, String prefix) throws Exception {
+    private DownloadResult downloadDirectoryAsZip(int userId, String prefix) throws Exception {
         File tempZip = File.createTempFile("minio-", ".zip");
         try (FileOutputStream fos = new FileOutputStream(tempZip);
              ZipOutputStream zos = new ZipOutputStream(fos)) {
-            Iterable<Result<Item>> results = storageService.getListObjects(userId, bucket, prefix.endsWith("/") ? prefix : prefix + "/", true);
+            Iterable<Result<Item>> results = storageService.getListObjects(userId, prefix.endsWith("/") ? prefix : prefix + "/", true);
             for (Result<Item> result : results) {
                 Item item = result.get();
-                try (InputStream is = storageService.getObject(bucket, item.objectName())) {
+                try (InputStream is = storageService.getObject(item.objectName())) {
                     String entryName = item.objectName().substring(prefix.length());
                     zos.putNextEntry(new ZipEntry(entryName));
                     is.transferTo(zos);
@@ -69,11 +69,11 @@ public class DownloadService {
         );
     }
 
-    private boolean isDirectory(String bucket, int userId, String path) {
+    private boolean isDirectory(int userId, String path) {
         if (!path.endsWith("/")) {
             path = path + "/";
         }
-        Iterable<Result<Item>> results = storageService.listObjects(userId, bucket, path, false);
+        Iterable<Result<Item>> results = storageService.listObjects(userId, path, false);
         return results.iterator().hasNext();
     }
 }

@@ -20,32 +20,32 @@ public class ResourceInfoService {
     private StorageService storageService;
     private ResourceInfoMapper resourceInfoMapper;
 
-    public ResourceInfoResponse getResourceInfo(String bucket, String resourceName, int userId) {
+    public ResourceInfoResponse getResourceInfo(String resourceName, int userId) {
         return resourceName.endsWith("/")
-                ? getDirectoryInfo(userId, bucket, resourceName)
-                : getFileInfo(userId, bucket, resourceName);
+                ? getDirectoryInfo(userId, resourceName)
+                : getFileInfo(userId, resourceName);
     }
 
-    public void deleteResource(String bucket, String resourceName, int userId) {
+    public void deleteResource(String resourceName, int userId) {
         if (resourceName.endsWith("/")) {
-            deleteObjects(userId, bucket, resourceName);
+            deleteObjects(userId, resourceName);
             return;
         }
-        deleteObject(userId, bucket, resourceName);
+        deleteObject(userId, resourceName);
     }
 
-    private void deleteObjects(int userId, String bucket, String key) {
-        storageService.removeObjects(userId, bucket, key);
+    private void deleteObjects(int userId, String key) {
+        storageService.removeObjects(userId, key);
     }
 
-    private void deleteObject(int userId, String bucket, String key) {
-        storageService.removeObject(userId, bucket, key);
+    private void deleteObject(int userId, String key) {
+        storageService.removeObject(userId, key);
     }
 
-    private ResourceInfoResponse getDirectoryInfo(int userId, String bucket, String folderName) {
-        List<Result<Item>> results = storageService.getListObjects(userId, bucket, folderName);
+    private ResourceInfoResponse getDirectoryInfo(int userId, String folderName) {
+        List<Result<Item>> results = storageService.getListObjects(userId, folderName);
         if (results.isEmpty()) {
-            log.error("Directory [{}] doesn't exist in bucket [{}]", folderName, bucket);
+            log.error("Directory [{}] doesn't exist", folderName);
             throw new ResourceNotFoundException("Directory doesn't exist");
         }
 
@@ -75,8 +75,8 @@ public class ResourceInfoService {
         return resourceInfoMapper.toResourceInfo(path, name, ResourceType.DIRECTORY);
     }
 
-    private ResourceInfoResponse getFileInfo(int userId, String bucket, String fileName) {
-        StatObjectResponse statObjectResponse = storageService.getStatObject(userId, bucket, fileName);
+    private ResourceInfoResponse getFileInfo(int userId, String fileName) {
+        StatObjectResponse statObjectResponse = storageService.getStatObject(userId, fileName);
         String fileNameWithPath = statObjectResponse.object();
         int lastIndexOfSplitter = fileNameWithPath.lastIndexOf("/");
         String folderName = fileNameWithPath.substring(0, lastIndexOfSplitter + 1);

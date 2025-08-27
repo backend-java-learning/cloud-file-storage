@@ -9,6 +9,7 @@ import io.minio.messages.DeleteObject;
 import io.minio.messages.Item;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.InputStreamSource;
 import org.springframework.stereotype.Service;
@@ -25,26 +26,34 @@ import java.util.stream.StreamSupport;
 @Service
 @AllArgsConstructor
 public class StorageService {
-//    getObject(bucket, key)
-//
-//    copyObject(bucket, fromKey, toKey)
 
+    @Value("${MINIO_BUCKET}")
+    private String bucket;
     private MinioClient minioClient;
 
-    public void putObject(int userId, String bucket, String relativePath, MultipartFile file) {
+    public void putObject(int userId, String relativePath, MultipartFile file) {
         String key = "%s/%s".formatted(addUserPrefix(userId, relativePath), file.getOriginalFilename());
-        putObject(bucket, key, file, file.getSize(), file.getContentType());
+        putObject(key, file, file.getSize(), file.getContentType());
     }
 
-    public void createEmptyFolder(int userId, String bucket, String relativePath) {
+    public void createEmptyFolder(int userId) {
+        createEmptyFolder(userId, "");
+    }
+
+
+    public void createEmptyFolder(int userId, String relativePath) {
         String key = addUserPrefix(userId, relativePath);
         InputStreamResource emptyStream = new InputStreamResource(new ByteArrayInputStream(new byte[0]));
-        putObject(bucket, key, emptyStream, 0, "application/x-directory");
+        putObject(key, emptyStream, 0, "application/x-directory");
     }
 
-    public void removeObjects(int userId, String bucket, String relativePath) {
+    public void removeObjects(int userId) {
+        removeObjects(userId, "");
+    }
+
+    public void removeObjects(int userId, String relativePath) {
         String key = addUserPrefix(userId, relativePath);
-        var objectsToDelete = getDeleteObjects(bucket, key);
+        var objectsToDelete = getDeleteObjects(key);
         if (objectsToDelete.isEmpty()) {
             throw new ResourceNotFoundException("The directory [%s] doesn't exist".formatted(relativePath));
         }
@@ -59,7 +68,33 @@ public class StorageService {
         }
     }
 
-    public void removeObject(int userId, String bucket, String relativePath) {
+    public void copyObject(int userId, String targetPath, String sourcePath) {
+        String targetKey = addUserPrefix(userId, targetPath);
+        String sourceKey = addUserPrefix(userId, sourcePath);
+        try {
+            minioClient.copyObject(
+                    CopyObjectArgs.builder()
+                            .bucket(bucket)
+                            .object(targetKey)
+                            .source(
+                                    CopySource.builder()
+                                            .bucket(bucket)
+                                            .object(sourceKey)
+                                            .build()
+                            )
+                            .build()
+            );
+        } catch (ErrorResponseException errorResponseException) {
+            if (errorResponseException.errorResponse().code().equals("NoSuchKey")) {
+                throw new ResourceNotFoundException("Object doesn't exist");
+            }
+            throw new StorageException("Unexpected issue while getting object information and metadata of an object", errorResponseException);
+        } catch (Exception e) {
+            throw new StorageException("Unexpected issue while copying object", e);
+        }
+    }
+
+    public void removeObject(int userId, String relativePath) {
         String key = addUserPrefix(userId, relativePath);
         try {
             minioClient.removeObject(
@@ -77,7 +112,7 @@ public class StorageService {
         }
     }
 
-    public StatObjectResponse getStatObject(int userId, String bucket, String relativePath) {
+    public StatObjectResponse getStatObject(int userId, String relativePath) {
         String key = addUserPrefix(userId, relativePath);
         try {
             return minioClient.statObject(
@@ -96,12 +131,12 @@ public class StorageService {
         }
     }
 
-    public GetObjectResponse getObject(int userId, String bucket, String relativePath) {
+    public GetObjectResponse getObject(int userId, String relativePath) {
         String key = addUserPrefix(userId, relativePath);
-        return getObject(bucket, key);
+        return getObject(key);
     }
 
-    public GetObjectResponse getObject(String bucket, String objectName) {
+    public GetObjectResponse getObject(String objectName) {
         try {
             return minioClient.getObject(
                     GetObjectArgs.builder()
@@ -119,16 +154,16 @@ public class StorageService {
         }
     }
 
-    public List<Result<Item>> getListObjects(int userId, String bucket, String prefix) {
-        return getListObjects(userId, bucket, prefix, false);
+    public List<Result<Item>> getListObjects(int userId, String prefix) {
+        return getListObjects(userId, prefix, false);
     }
 
-    public List<Result<Item>> getListObjects(int userId, String bucket, String prefix, boolean isRecursive) {
-        Iterable<Result<Item>> results = listObjects(userId, bucket, prefix, isRecursive);
+    public List<Result<Item>> getListObjects(int userId, String prefix, boolean isRecursive) {
+        Iterable<Result<Item>> results = listObjects(userId, prefix, isRecursive);
         return StreamSupport.stream(results.spliterator(), false).toList();
     }
 
-    private void putObject(String bucket, String key, InputStreamSource inputStreamSource, long objectSize, String contentType) {
+    private void putObject(String key, InputStreamSource inputStreamSource, long objectSize, String contentType) {
         try (InputStream is = inputStreamSource.getInputStream()) {
             minioClient.putObject(
                     PutObjectArgs.builder()
@@ -152,12 +187,24 @@ public class StorageService {
         }
     }
 
-    public Iterable<Result<Item>> listObjects(int userId, String bucket, String relativePath, boolean isRecursive) {
+    public Iterable<Result<Item>> listObjects(int userId, String relativePath, boolean isRecursive) {
         String prefix = addUserPrefix(userId, relativePath);
-        return listObjects(bucket, prefix, isRecursive);
+        return listObjects(prefix, isRecursive);
     }
 
-    private Iterable<Result<Item>> listObjects(String bucket, String prefix, boolean isRecursive) {
+    public List<String> getObjectsNames(int userId, String relativePath, boolean isRecursive) {
+        String prefix = addUserPrefix(userId, relativePath);
+        return StreamSupport.stream(listObjects(prefix, isRecursive).spliterator(), false)
+                .map(result -> {
+                    try {
+                        return result.get().objectName();
+                    } catch (Exception ex) {
+                        throw new StorageException("Unexpected issue");
+                    }
+                }).toList();
+    }
+
+    private Iterable<Result<Item>> listObjects(String prefix, boolean isRecursive) {
         return minioClient.listObjects(
                 ListObjectsArgs.builder()
                         .bucket(bucket)
@@ -167,8 +214,8 @@ public class StorageService {
         );
     }
 
-    private List<DeleteObject> getDeleteObjects(String bucket, String prefix) {
-        Iterable<Result<Item>> results = listObjects(bucket, prefix, true);
+    private List<DeleteObject> getDeleteObjects(String prefix) {
+        Iterable<Result<Item>> results = listObjects(prefix, true);
         List<DeleteObject> deleteObjects = new ArrayList<>();
         for (Result<Item> result : results) {
             try {

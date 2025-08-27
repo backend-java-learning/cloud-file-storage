@@ -7,7 +7,7 @@ import io.minio.*;
 import io.minio.errors.*;
 import io.minio.messages.DeleteObject;
 import io.minio.messages.Item;
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.InputStreamResource;
@@ -24,12 +24,12 @@ import java.util.stream.StreamSupport;
 
 @Slf4j
 @Service
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class StorageService {
 
     @Value("${MINIO_BUCKET}")
     private String bucket;
-    private MinioClient minioClient;
+    private final MinioClient minioClient;
 
     public void putObject(int userId, String relativePath, MultipartFile file) {
         String key = "%s/%s".formatted(addUserPrefix(userId, relativePath), file.getOriginalFilename());
@@ -39,7 +39,6 @@ public class StorageService {
     public void createEmptyFolder(int userId) {
         createEmptyFolder(userId, "");
     }
-
 
     public void createEmptyFolder(int userId, String relativePath) {
         String key = addUserPrefix(userId, relativePath);
@@ -154,8 +153,9 @@ public class StorageService {
         }
     }
 
-    public List<Result<Item>> getListObjects(int userId, String prefix) {
-        return getListObjects(userId, prefix, false);
+    public boolean doesObjectExist(int userId, String prefix) {
+        prefix = addUserPrefix(userId, prefix);
+        return listObjects(prefix, false).iterator().hasNext();
     }
 
     public List<Result<Item>> getListObjects(int userId, String prefix, boolean isRecursive) {
@@ -187,6 +187,7 @@ public class StorageService {
         }
     }
 
+    //TODO: add method isObjectExist
     public Iterable<Result<Item>> listObjects(int userId, String relativePath, boolean isRecursive) {
         String prefix = addUserPrefix(userId, relativePath);
         return listObjects(prefix, isRecursive);
@@ -231,6 +232,10 @@ public class StorageService {
     }
 
     private String addUserPrefix(int userId, String objectKey) {
-        return "user-%s-files/%s".formatted(userId, objectKey);
+        String prefix = "user-%s-files/".formatted(userId);
+        if (objectKey.startsWith(prefix)) {
+            return objectKey; // уже добавлен
+        }
+        return prefix + objectKey;
     }
 }

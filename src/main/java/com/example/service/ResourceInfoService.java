@@ -43,8 +43,7 @@ public class ResourceInfoService {
     }
 
     private ResourceInfoResponse getDirectoryInfo(int userId, String folderName) {
-        List<Result<Item>> results = storageService.getListObjects(userId, folderName);
-        if (results.isEmpty()) {
+        if (!storageService.doesObjectExist(userId, folderName)) {
             log.error("Directory [{}] doesn't exist", folderName);
             throw new ResourceNotFoundException("Directory doesn't exist");
         }

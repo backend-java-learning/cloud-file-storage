@@ -20,7 +20,7 @@ public class UploadService {
     private ResourceInfoMapper resourceInfoMapper;
 
     public List<ResourceInfoResponse> uploadFile(int userId, String folderPath, MultipartFile file) {
-        if (storageService.getListObjects(userId, folderPath).isEmpty()) {
+        if (!storageService.doesObjectExist(userId, folderPath)) {
             storageService.createEmptyFolder(userId, folderPath);
         }
         storageService.putObject(userId, folderPath, file);

@@ -73,7 +73,6 @@ public class DownloadService {
         if (!path.endsWith("/")) {
             path = path + "/";
         }
-        Iterable<Result<Item>> results = storageService.listObjects(userId, path, false);
-        return results.iterator().hasNext();
+        return storageService.doesObjectExist(userId, path);
     }
 }

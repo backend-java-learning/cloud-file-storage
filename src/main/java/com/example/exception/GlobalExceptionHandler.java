@@ -53,10 +53,6 @@ public class GlobalExceptionHandler {
 
     private <T extends RuntimeException> ResponseEntity<ErrorResponse> setMessage(ResponseEntity.BodyBuilder bodyBuilder,
                                                                                   String message) {
-        return bodyBuilder.body(
-                ErrorResponse.builder()
-                        .message(message)
-                        .build()
-        );
+        return bodyBuilder.body(new ErrorResponse(message));
     }
 }

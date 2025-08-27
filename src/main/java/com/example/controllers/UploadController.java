@@ -1,6 +1,7 @@
 package com.example.controllers;
 
 import com.example.dto.ResourceInfoResponse;
+import com.example.exception.InvalidPathException;
 import com.example.models.User;
 import com.example.service.UploadService;
 import lombok.AllArgsConstructor;
@@ -22,8 +23,13 @@ public class UploadController {
     private UploadService uploadService;
 
     @PostMapping("/resource")
-    public ResponseEntity<List<ResourceInfoResponse>> uploadFile(@AuthenticationPrincipal User user, @RequestParam MultipartFile file) {
-        List<ResourceInfoResponse> resourceInfoResponses = uploadService.uploadFile(user.getId(), "user-files", "user-1-files/createdFolder", file);
+    public ResponseEntity<List<ResourceInfoResponse>> uploadFile(@AuthenticationPrincipal User user,
+                                                                 @RequestParam String path,
+                                                                 @RequestParam MultipartFile file) {
+        if (!path.endsWith("/") && !path.isEmpty()) {
+            throw new InvalidPathException("The path for folder have to end with '/'");
+        }
+        List<ResourceInfoResponse> resourceInfoResponses = uploadService.uploadFile(user.getId(), "user-files", path, file);
         return ResponseEntity.ok(resourceInfoResponses);
     }
 }

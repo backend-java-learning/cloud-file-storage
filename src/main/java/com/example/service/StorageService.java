@@ -9,9 +9,12 @@ import io.minio.messages.DeleteObject;
 import io.minio.messages.Item;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.core.io.InputStreamSource;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -29,28 +32,14 @@ public class StorageService {
     private MinioClient minioClient;
 
     public void putObject(int userId, String bucket, String relativePath, MultipartFile file) {
+        String key = "%s/%s".formatted(addUserPrefix(userId, relativePath), file.getOriginalFilename());
+        putObject(bucket, key, file, file.getSize(), file.getContentType());
+    }
+
+    public void createEmptyFolder(int userId, String bucket, String relativePath) {
         String key = addUserPrefix(userId, relativePath);
-        try (InputStream is = file.getInputStream()) {
-            minioClient.putObject(
-                    PutObjectArgs.builder()
-                            .bucket(bucket)
-                            .object(key)
-                            .stream(is, file.getSize(), -1)
-                            .contentType(file.getContentType())
-                            .build()
-            );
-        } catch (ErrorResponseException errorResponseException) {
-            if (errorResponseException.errorResponse().code().equals("NoSuchKey")) {
-                throw new ResourceNotFoundException("Object [%s] doesn't exist".formatted(relativePath));
-            }
-            throw new StorageException("Unexpected issue while put object in bucket", errorResponseException);
-        } catch (IOException ioException) {
-            throw new StorageException(
-                    "I/O error while uploading object [%s] to bucket [%s]. Possible network or file stream issue."
-                            .formatted(relativePath, bucket), ioException);
-        } catch (Exception exception) {
-            throw new StorageException("Unexpected issue while put object in bucket", exception);
-        }
+        InputStreamResource emptyStream = new InputStreamResource(new ByteArrayInputStream(new byte[0]));
+        putObject(bucket, key, emptyStream, 0, "application/x-directory");
     }
 
     public void removeObjects(int userId, String bucket, String relativePath) {
@@ -107,6 +96,29 @@ public class StorageService {
         }
     }
 
+    public GetObjectResponse getObject(int userId, String bucket, String relativePath) {
+        String key = addUserPrefix(userId, relativePath);
+        return getObject(bucket, key);
+    }
+
+    public GetObjectResponse getObject(String bucket, String objectName) {
+        try {
+            return minioClient.getObject(
+                    GetObjectArgs.builder()
+                            .bucket(bucket)
+                            .object(objectName)
+                            .build()
+            );
+        } catch (ErrorResponseException errorResponseException) {
+            if (errorResponseException.errorResponse().code().equals("NoSuchKey")) {
+                throw new ResourceNotFoundException("Object doesn't exist");
+            }
+            throw new StorageException("Unexpected issue while getting object", errorResponseException);
+        } catch (Exception e) {
+            throw new StorageException("Unexpected issue while getting object", e);
+        }
+    }
+
     public List<Result<Item>> getListObjects(int userId, String bucket, String prefix) {
         return getListObjects(userId, bucket, prefix, false);
     }
@@ -116,7 +128,31 @@ public class StorageService {
         return StreamSupport.stream(results.spliterator(), false).toList();
     }
 
-    private Iterable<Result<Item>> listObjects(int userId, String bucket, String relativePath, boolean isRecursive) {
+    private void putObject(String bucket, String key, InputStreamSource inputStreamSource, long objectSize, String contentType) {
+        try (InputStream is = inputStreamSource.getInputStream()) {
+            minioClient.putObject(
+                    PutObjectArgs.builder()
+                            .bucket(bucket)
+                            .object(key)
+                            .stream(is, objectSize, -1)
+                            .contentType(contentType)
+                            .build()
+            );
+        } catch (ErrorResponseException errorResponseException) {
+            if (errorResponseException.errorResponse().code().equals("NoSuchKey")) {
+                throw new ResourceNotFoundException("Object doesn't exist");
+            }
+            throw new StorageException("Unexpected issue while put object in bucket", errorResponseException);
+        } catch (IOException ioException) {
+            throw new StorageException(
+                    "I/O error while uploading object [%s] to bucket [%s]. Possible network or file stream issue."
+                            .formatted(key, bucket), ioException);
+        } catch (Exception exception) {
+            throw new StorageException("Unexpected issue while put object in bucket", exception);
+        }
+    }
+
+    public Iterable<Result<Item>> listObjects(int userId, String bucket, String relativePath, boolean isRecursive) {
         String prefix = addUserPrefix(userId, relativePath);
         return listObjects(bucket, prefix, isRecursive);
     }

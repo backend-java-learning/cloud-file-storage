@@ -2,12 +2,14 @@ package com.example.service;
 
 import com.example.dto.ResourceInfoResponse;
 import com.example.dto.enums.ResourceType;
+import com.example.exception.ResourceNotFoundException;
 import com.example.mapper.ResourceInfoMapper;
 import io.minio.StatObjectResponse;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.ByteArrayInputStream;
 import java.util.List;
 
 @Service
@@ -18,19 +20,21 @@ public class UploadService {
     private ResourceInfoMapper resourceInfoMapper;
 
     public List<ResourceInfoResponse> uploadFile(int userId, String bucket, String folderPath, MultipartFile file) {
-        String key = "%s/%s".formatted(folderPath, file.getOriginalFilename());
-        storageService.putObject(userId, bucket, key, file);
-        StatObjectResponse statObjectResponse = storageService.getStatObject(userId, bucket, key);
+        if (storageService.getListObjects(userId, bucket, folderPath).isEmpty()) {
+            storageService.createEmptyFolder(userId, bucket, folderPath);
+        }
+        storageService.putObject(userId, bucket, folderPath, file);
+        StatObjectResponse statObjectResponse = storageService.getStatObject(userId, bucket, folderPath);
         ResourceInfoResponse resourceInfoResponse = resourceInfoMapper
                 .toResourceInfo(statObjectResponse.size(), folderPath, file.getOriginalFilename(), ResourceType.FILE);
         return List.of(resourceInfoResponse);
     }
 
-    public void uploadFiles(int userId, String bucket, String basePath, List<MultipartFile> files) {
-        for (MultipartFile file : files) {
-            String relativePath = file.getOriginalFilename();
-            String key = "%s/%s".formatted(basePath, relativePath);
-            storageService.putObject(userId, bucket, key, file);
-        }
-    }
+//    public void uploadFiles(int userId, String bucket, String basePath, List<MultipartFile> files) {
+//        for (MultipartFile file : files) {
+//            String relativePath = file.getOriginalFilename();
+//            String key = "%s/%s".formatted(basePath, relativePath);
+//            storageService.putObject(userId, bucket, key, file);
+//        }
+//    }
 }

@@ -8,11 +8,13 @@ import com.example.models.User;
 import com.example.repository.UserRepository;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+@Slf4j
 @Service
 @AllArgsConstructor
 public class UserService {
@@ -20,31 +22,25 @@ public class UserService {
     private UserRepository userRepository;
     private UserMapper userMapper;
     private PasswordEncoder passwordEncoder;
-    private MinioService minioService;
+    private StorageService storageService;
 
     @Transactional
-    public AuthorizedUserResponse registerUser(AuthorizeUserRequest authorizeUserRequest) {
-        String folderName = "";
+    public AuthorizedUserResponse registerUser(AuthorizeUserRequest authorizeUserRequest, String bucket) {
+        Integer savedUserId = null;
         try {
             User user = userMapper.toUser(authorizeUserRequest);
             user.setPassword(passwordEncoder.encode(authorizeUserRequest.getPassword()));
             User savedUser = userRepository.save(user);
-            folderName = "user-%s-files/".formatted(savedUser.getId());
-            minioService.createFolder(folderName);
+            savedUserId = savedUser.getId();
+            storageService.createEmptyFolder(savedUserId, bucket, "");
             return userMapper.toAuthorizedUserResponse(savedUser);
         } catch (DataIntegrityViolationException e) {
             throw new UserAlreadyExistsException("Пользователь с таким логином уже существует");
         } catch (Exception ex) {
-            // если bucket был создан частично → попытка удалить
-            try {
-                minioService.removeFolder(folderName);
-            } catch (Exception deleteException) {
-                // логируем, но БД всё равно откатится
-                //log.error("Не удалось удалить bucket посл
-                // е ошибки", ex);
+            if(savedUserId != null) {
+                storageService.removeObjects(savedUserId, bucket, "");
             }
-            //Add MinioException
-            throw new RuntimeException("Ошибка при создании bucket в MinIO", ex);
+            throw new RuntimeException("Unexpected", ex);
         }
     }
 

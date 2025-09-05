@@ -30,8 +30,6 @@ public class ResourceController {
 
     private final ResourceServiceFactory resourceServiceFactory;
 
-    private ResourceInfoService resourceInfoService;
-    private DownloadService downloadService;
     private RenameService renameService;
     private UploadService uploadService;
 
@@ -41,15 +39,27 @@ public class ResourceController {
             throw new InvalidPathException("Resource path can't be empty");
         }
         StorageKey storageKey = new StorageKey(user.getId(), path);
-        ResourceService resourceService = resourceServiceFactory.getService(storageKey.getResourceType());
+        ResourceService resourceService = resourceServiceFactory.create(storageKey.getResourceType());
         ResourceInfoResponse resourceInfo = resourceService.getInfo(storageKey);
         return ResponseEntity.ok(resourceInfo);
     }
 
+    @PostMapping("/resource")
+    public ResponseEntity<List<ResourceInfoResponse>> uploadFile(@AuthenticationPrincipal User user,
+                                                                 @RequestParam String path,
+                                                                 @RequestParam MultipartFile file) {
+        if (!path.endsWith("/") && !path.isEmpty()) {
+            throw new InvalidPathException("The path for folder have to end with '/'");
+        }
+        List<ResourceInfoResponse> resourceInfoResponses = uploadService.uploadFile(user.getId(), path, file);
+        return ResponseEntity.ok(resourceInfoResponses);
+    }
+
     @GetMapping("/resource/download")
     private ResponseEntity<Resource> downloadResource(@AuthenticationPrincipal User user,
-                                                      @RequestParam String path) throws Exception {
-        DownloadResult result = downloadService.download(user.getId(), path);
+                                                      @RequestParam String path) {
+        StorageKey storageKey = new StorageKey(user.getId(), path);
+        DownloadResult result = resourceServiceFactory.create(storageKey.getResourceType()).download(storageKey);
         return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
                 .header(HttpHeaders.CONTENT_DISPOSITION,
@@ -65,23 +75,13 @@ public class ResourceController {
         return ResponseEntity.ok().body(resourceInfoResponse);
     }
 
-    @PostMapping("/resource")
-    public ResponseEntity<List<ResourceInfoResponse>> uploadFile(@AuthenticationPrincipal User user,
-                                                                 @RequestParam String path,
-                                                                 @RequestParam MultipartFile file) {
-        if (!path.endsWith("/") && !path.isEmpty()) {
-            throw new InvalidPathException("The path for folder have to end with '/'");
-        }
-        List<ResourceInfoResponse> resourceInfoResponses = uploadService.uploadFile(user.getId(), path, file);
-        return ResponseEntity.ok(resourceInfoResponses);
-    }
-
     @DeleteMapping(value = "/resource")
     public ResponseEntity<Void> deleteResource(@AuthenticationPrincipal User user, @RequestParam String path) {
         if (path.isEmpty()) {
             throw new InvalidPathException("Resource path can't be empty");
         }
-        resourceInfoService.deleteResource(user.getId(), path);
+        StorageKey storageKey = new StorageKey(user.getId(), path);
+        resourceServiceFactory.create(storageKey.getResourceType()).remove(storageKey);
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 }

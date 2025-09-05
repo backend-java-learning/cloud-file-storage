@@ -14,7 +14,7 @@ public class ResourceServiceFactory {
     private FileService fileService;
     private DirectoryService directoryService;
 
-    public ResourceService getService(ResourceType type) {
+    public ResourceService create(ResourceType type) {
         return switch (type) {
             case FILE -> fileService;
             case DIRECTORY -> directoryService;

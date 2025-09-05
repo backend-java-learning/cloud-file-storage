@@ -4,6 +4,7 @@ import com.example.dto.ResourceInfoResponse;
 import com.example.dto.enums.ResourceType;
 import com.example.exception.ResourceNotFoundException;
 import com.example.mapper.ResourceInfoMapper;
+import com.example.models.ResourcePath;
 import com.example.models.StorageKey;
 import com.example.service.StorageService;
 import lombok.AllArgsConstructor;
@@ -24,32 +25,8 @@ public class DirectoryService implements ResourceService {
             log.error("Directory [{}] doesn't exist", storageKey.buildKey());
             throw new ResourceNotFoundException("Directory [%s] doesn't exist".formatted(storageKey.relativePath()));
         }
-
-        String folderName = storageKey.relativePath();
-        String trimmed = folderName.endsWith("/")
-                ? folderName.substring(0, folderName.length() - 1)
-                : folderName;
-        int lastSlash = trimmed.lastIndexOf("/");
-
-        //TODO: move in utils
-        String path;
-        String name;
-
-        if (lastSlash == -1) {
-            // Если слешей нет, значит путь пустой, а всё остальное — имя
-            path = "";
-            name = folderName;
-        } else {
-            path = folderName.substring(0, lastSlash + 1); // включая последний "/"
-            name = folderName.substring(lastSlash + 1);    // имя без "/"
-
-            // Добавляем "/" к имени, если в исходном пути он был
-            if (folderName.endsWith("/")) {
-                name = name + "/";
-            }
-        }
-
-        return resourceInfoMapper.toResourceInfo(path, name, ResourceType.DIRECTORY);
+        ResourcePath folderPath = ResourcePath.of(storageKey.relativePath());
+        return resourceInfoMapper.toResourceInfo(folderPath.getParentPath(), folderPath.getFolderName(), ResourceType.DIRECTORY);
     }
 
     @Override

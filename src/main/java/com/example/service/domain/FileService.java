@@ -3,6 +3,7 @@ package com.example.service.domain;
 import com.example.dto.ResourceInfoResponse;
 import com.example.dto.enums.ResourceType;
 import com.example.mapper.ResourceInfoMapper;
+import com.example.models.ResourcePath;
 import com.example.models.StorageKey;
 import com.example.service.StorageService;
 import io.minio.StatObjectResponse;
@@ -19,11 +20,10 @@ public class FileService implements ResourceService {
     @Override
     public ResourceInfoResponse getInfo(StorageKey storageKey) {
         StatObjectResponse statObjectResponse = storageService.getStatObject(storageKey);
-        String fileNameWithPath = statObjectResponse.object();
-        int lastIndexOfSplitter = fileNameWithPath.lastIndexOf("/");
-        String folderName = fileNameWithPath.substring(0, lastIndexOfSplitter + 1);
-        String fileName1 = fileNameWithPath.substring(lastIndexOfSplitter + 1);
-        return resourceInfoMapper.toResourceInfo(statObjectResponse.size(), folderName, fileName1, ResourceType.FILE);
+        String fileNameWithPath = statObjectResponse.object().replace(storageKey.getPrefix(), "");
+        ResourcePath resourcePath = ResourcePath.of(fileNameWithPath);
+        return resourceInfoMapper.toResourceInfo(statObjectResponse.size(), resourcePath.getParentPath(),
+                resourcePath.getFolderName(), ResourceType.FILE);
     }
 
     @Override

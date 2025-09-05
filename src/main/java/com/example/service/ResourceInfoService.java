@@ -9,6 +9,8 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Slf4j
 @Service
 @AllArgsConstructor
@@ -17,7 +19,6 @@ public class ResourceInfoService {
     private StorageService storageService;
     private FileService fileService;
     private DirectoryService directoryService;
-    private ResourceInfoMapper resourceInfoMapper;
 
     public ResourceInfoResponse getResourceInfo(String resourceName, int userId) {
         StorageKey storageKey = new StorageKey(userId, resourceName);

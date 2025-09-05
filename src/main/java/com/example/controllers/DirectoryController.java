@@ -1,7 +1,6 @@
 package com.example.controllers;
 
 import com.example.dto.ResourceInfoResponse;
-import com.example.exception.InvalidPathException;
 import com.example.models.User;
 import com.example.service.ResourceInfoService;
 import lombok.AllArgsConstructor;
@@ -19,9 +18,9 @@ public class DirectoryController {
 
     private ResourceInfoService resourceInfoService;
 
-    @GetMapping(value = "/directory")
-    public ResponseEntity<ResourceInfoResponse> getResourceInfo(@AuthenticationPrincipal User user, @RequestParam String path) {
-        ResourceInfoResponse resourceInfo = resourceInfoService.getResourceInfo(path, user.getId());
-        return ResponseEntity.ok(resourceInfo);
-    }
+//    @GetMapping(value = "/directory")
+//    public ResponseEntity<ResourceInfoResponse> getResourceInfo(@AuthenticationPrincipal User user, @RequestParam String path) {
+//        ResourceInfoResponse resourceInfo = resourceInfoService.getDirectoryInfo(path, user.getId());
+//        return ResponseEntity.ok(resourceInfo);
+//    }
 }

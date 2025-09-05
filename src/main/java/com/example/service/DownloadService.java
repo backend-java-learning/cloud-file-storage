@@ -2,6 +2,7 @@ package com.example.service;
 
 import com.example.dto.DownloadResult;
 import com.example.exception.StorageException;
+import com.example.models.StorageKey;
 import io.minio.*;
 import io.minio.messages.Item;
 import lombok.AllArgsConstructor;
@@ -24,36 +25,37 @@ public class DownloadService {
     private StorageService storageService;
 
     public DownloadResult download(int userId, String objectKey) throws Exception {
-        return isDirectory(userId, objectKey)
-                ? downloadDirectoryAsZip(userId, objectKey)
-                : downloadFile(userId, objectKey);
+        StorageKey storageKey = new StorageKey(userId, objectKey);
+        return isDirectory(storageKey)
+                ? downloadDirectoryAsZip(storageKey)
+                : downloadFile(storageKey);
     }
 
-    private DownloadResult downloadFile(int userId, String objectKey) {
+    private DownloadResult downloadFile(StorageKey storageKey) {
         try {
-            InputStream stream = storageService.getObject(userId, objectKey);
+            InputStream stream = storageService.getObject(storageKey);
             Resource resource = new InputStreamResource(stream);
-            StatObjectResponse stat = storageService.getStatObject(userId, objectKey);
+            StatObjectResponse stat = storageService.getStatObject(storageKey);
             return new DownloadResult(
-                    Paths.get(objectKey).getFileName().toString(),
+                    Paths.get(storageKey.relativePath()).getFileName().toString(),
                     resource,
                     stat.size(),
                     stat.contentType() != null ? stat.contentType() : "application/octet-stream"
             );
         } catch (Exception e) {
-            throw new StorageException("Failed to download object: " + objectKey, e);
+            throw new StorageException("Failed to download object: " + storageKey.buildKey(), e);
         }
     }
 
-    private DownloadResult downloadDirectoryAsZip(int userId, String prefix) throws Exception {
+    private DownloadResult downloadDirectoryAsZip(StorageKey storageKey) throws Exception {
         File tempZip = File.createTempFile("minio-", ".zip");
         try (FileOutputStream fos = new FileOutputStream(tempZip);
              ZipOutputStream zos = new ZipOutputStream(fos)) {
-            Iterable<Result<Item>> results = storageService.getListObjects(userId, prefix.endsWith("/") ? prefix : prefix + "/", true);
+            Iterable<Result<Item>> results = storageService.getListObjects(storageKey, true);
             for (Result<Item> result : results) {
                 Item item = result.get();
                 try (InputStream is = storageService.getObject(item.objectName())) {
-                    String entryName = item.objectName().substring(prefix.length());
+                    String entryName = item.objectName().substring(storageKey.buildKey().length());
                     zos.putNextEntry(new ZipEntry(entryName));
                     is.transferTo(zos);
                     zos.closeEntry();
@@ -62,17 +64,17 @@ public class DownloadService {
         }
         Resource resource = new FileSystemResource(tempZip);
         return new DownloadResult(
-                Paths.get(prefix).getFileName().toString() + ".zip",
+                Paths.get(storageKey.buildKey()).getFileName().toString() + ".zip",
                 resource,
                 tempZip.length(),
                 "application/zip"
         );
     }
 
-    private boolean isDirectory(int userId, String path) {
-        if (!path.endsWith("/")) {
-            path = path + "/";
-        }
-        return storageService.doesObjectExist(userId, path);
+    private boolean isDirectory(StorageKey storageKey) {
+//        if (!path.endsWith("/")) {
+//            path = path + "/";
+//        }
+        return storageService.doesObjectExist(storageKey);
     }
 }

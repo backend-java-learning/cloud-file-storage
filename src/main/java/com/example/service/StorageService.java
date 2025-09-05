@@ -3,6 +3,7 @@ package com.example.service;
 import com.example.exception.DeleteResourceException;
 import com.example.exception.ResourceNotFoundException;
 import com.example.exception.StorageException;
+import com.example.models.StorageKey;
 import io.minio.*;
 import io.minio.errors.*;
 import io.minio.messages.DeleteObject;
@@ -31,30 +32,27 @@ public class StorageService {
     private String bucket;
     private final MinioClient minioClient;
 
-    public void putObject(int userId, String relativePath, MultipartFile file) {
-        String key = "%s/%s".formatted(addUserPrefix(userId, relativePath), file.getOriginalFilename());
-        putObject(key, file, file.getSize(), file.getContentType());
+    public void putObject(StorageKey storageKey, MultipartFile file) {
+        putObject(storageKey, file, file.getSize(), file.getContentType());
     }
 
-    public void createEmptyFolder(int userId) {
-        createEmptyFolder(userId, "");
+    public void putEmptyFolder(int userId) {
+        putEmptyFolder(new StorageKey(userId, ""));
     }
 
-    public void createEmptyFolder(int userId, String relativePath) {
-        String key = addUserPrefix(userId, relativePath);
+    public void putEmptyFolder(StorageKey storageKey) {
         InputStreamResource emptyStream = new InputStreamResource(new ByteArrayInputStream(new byte[0]));
-        putObject(key, emptyStream, 0, "application/x-directory");
+        putObject(storageKey, emptyStream, 0, "application/x-directory");
     }
 
     public void removeObjects(int userId) {
-        removeObjects(userId, "");
+        removeObjects(new StorageKey(userId, ""));
     }
 
-    public void removeObjects(int userId, String relativePath) {
-        String key = addUserPrefix(userId, relativePath);
-        var objectsToDelete = getDeleteObjects(key);
+    public void removeObjects(StorageKey storageKey) {
+        var objectsToDelete = getDeleteObjects(storageKey.buildKey());
         if (objectsToDelete.isEmpty()) {
-            throw new ResourceNotFoundException("The directory [%s] doesn't exist".formatted(relativePath));
+            throw new ResourceNotFoundException("The directory [%s] doesn't exist".formatted(storageKey.relativePath()));
         }
         var deleteErrors = minioClient.removeObjects(
                 RemoveObjectsArgs.builder()
@@ -63,22 +61,20 @@ public class StorageService {
                         .build()
         );
         if (StreamSupport.stream(deleteErrors.spliterator(), false).findAny().isPresent()) {
-            throw new DeleteResourceException("Unexpected issue while deleting objects by key [%s]".formatted(relativePath));
+            throw new DeleteResourceException("Unexpected issue while deleting objects by key [%s]".formatted(storageKey.relativePath()));
         }
     }
 
-    public void copyObject(int userId, String targetPath, String sourcePath) {
-        String targetKey = addUserPrefix(userId, targetPath);
-        String sourceKey = addUserPrefix(userId, sourcePath);
+    public void copyObject(StorageKey targetKey, StorageKey sourceKey) {
         try {
             minioClient.copyObject(
                     CopyObjectArgs.builder()
                             .bucket(bucket)
-                            .object(targetKey)
+                            .object(targetKey.buildKey())
                             .source(
                                     CopySource.builder()
                                             .bucket(bucket)
-                                            .object(sourceKey)
+                                            .object(sourceKey.buildKey())
                                             .build()
                             )
                             .build()
@@ -93,36 +89,34 @@ public class StorageService {
         }
     }
 
-    public void removeObject(int userId, String relativePath) {
-        String key = addUserPrefix(userId, relativePath);
+    public void removeObject(StorageKey storageKey) {
         try {
             minioClient.removeObject(
                     RemoveObjectArgs.builder()
                             .bucket(bucket)
-                            .object(key)
+                            .object(storageKey.buildKey())
                             .build());
         } catch (ErrorResponseException e) {
             if (e.errorResponse().code().equals("NoSuchKey")) {
-                throw new ResourceNotFoundException("Object [%s] doesn't exist".formatted(relativePath));
+                throw new ResourceNotFoundException("Object [%s] doesn't exist".formatted(storageKey.relativePath()));
             }
-            throw new DeleteResourceException(relativePath, e);
+            throw new DeleteResourceException(storageKey.relativePath(), e);
         } catch (Exception e) {
-            throw new DeleteResourceException(relativePath, e);
+            throw new DeleteResourceException(storageKey.relativePath(), e);
         }
     }
 
-    public StatObjectResponse getStatObject(int userId, String relativePath) {
-        String key = addUserPrefix(userId, relativePath);
+    public StatObjectResponse getStatObject(StorageKey storageKey) {
         try {
             return minioClient.statObject(
                     StatObjectArgs.builder()
                             .bucket(bucket)
-                            .object(key)
+                            .object(storageKey.buildKey())
                             .build()
             );
         } catch (ErrorResponseException errorResponseException) {
             if (errorResponseException.errorResponse().code().equals("NoSuchKey")) {
-                throw new ResourceNotFoundException("Object [%s] doesn't exist".formatted(relativePath));
+                throw new ResourceNotFoundException("Object [%s] doesn't exist".formatted(storageKey.relativePath()));
             }
             throw new StorageException("Unexpected issue while getting object information and metadata of an object", errorResponseException);
         } catch (Exception e) {
@@ -130,9 +124,8 @@ public class StorageService {
         }
     }
 
-    public GetObjectResponse getObject(int userId, String relativePath) {
-        String key = addUserPrefix(userId, relativePath);
-        return getObject(key);
+    public GetObjectResponse getObject(StorageKey storageKey) {
+        return getObject(storageKey.buildKey());
     }
 
     public GetObjectResponse getObject(String objectName) {
@@ -153,22 +146,21 @@ public class StorageService {
         }
     }
 
-    public boolean doesObjectExist(int userId, String prefix) {
-        prefix = addUserPrefix(userId, prefix);
-        return listObjects(prefix, false).iterator().hasNext();
+    public boolean doesObjectExist(StorageKey storageKey) {
+        return listObjects(storageKey.buildKey(), false).iterator().hasNext();
     }
 
-    public List<Result<Item>> getListObjects(int userId, String prefix, boolean isRecursive) {
-        Iterable<Result<Item>> results = listObjects(userId, prefix, isRecursive);
+    public List<Result<Item>> getListObjects(StorageKey storageKey, boolean isRecursive) {
+        Iterable<Result<Item>> results = listObjects(storageKey.buildKey(), isRecursive);
         return StreamSupport.stream(results.spliterator(), false).toList();
     }
 
-    private void putObject(String key, InputStreamSource inputStreamSource, long objectSize, String contentType) {
+    private void putObject(StorageKey storageKey, InputStreamSource inputStreamSource, long objectSize, String contentType) {
         try (InputStream is = inputStreamSource.getInputStream()) {
             minioClient.putObject(
                     PutObjectArgs.builder()
                             .bucket(bucket)
-                            .object(key)
+                            .object(storageKey.buildKey())
                             .stream(is, objectSize, -1)
                             .contentType(contentType)
                             .build()
@@ -181,21 +173,19 @@ public class StorageService {
         } catch (IOException ioException) {
             throw new StorageException(
                     "I/O error while uploading object [%s] to bucket [%s]. Possible network or file stream issue."
-                            .formatted(key, bucket), ioException);
+                            .formatted(storageKey.buildKey(), bucket), ioException);
         } catch (Exception exception) {
             throw new StorageException("Unexpected issue while put object in bucket", exception);
         }
     }
 
     //TODO: add method isObjectExist
-    public Iterable<Result<Item>> listObjects(int userId, String relativePath, boolean isRecursive) {
-        String prefix = addUserPrefix(userId, relativePath);
-        return listObjects(prefix, isRecursive);
+    public Iterable<Result<Item>> listObjects(StorageKey storageKey, boolean isRecursive) {
+        return listObjects(storageKey.buildKey(), isRecursive);
     }
 
-    public List<String> getObjectsNames(int userId, String relativePath, boolean isRecursive) {
-        String prefix = addUserPrefix(userId, relativePath);
-        return StreamSupport.stream(listObjects(prefix, isRecursive).spliterator(), false)
+    public List<String> getObjectsNames(StorageKey storageKey, boolean isRecursive) {
+        return StreamSupport.stream(listObjects(storageKey.buildKey(), isRecursive).spliterator(), false)
                 .map(result -> {
                     try {
                         return result.get().objectName();
@@ -229,13 +219,5 @@ public class StorageService {
             }
         }
         return deleteObjects;
-    }
-
-    private String addUserPrefix(int userId, String objectKey) {
-        String prefix = "user-%s-files/".formatted(userId);
-        if (objectKey.startsWith(prefix)) {
-            return objectKey; // уже добавлен
-        }
-        return prefix + objectKey;
     }
 }

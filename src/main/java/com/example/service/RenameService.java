@@ -1,6 +1,7 @@
 package com.example.service;
 
 import com.example.dto.ResourceInfoResponse;
+import com.example.models.StorageKey;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -14,36 +15,33 @@ public class RenameService {
     private ResourceInfoService resourceInfoService;
 
     public ResourceInfoResponse moveResource(int userId, String sourceKey, String targetKey) {
+        StorageKey sourceStorageKey = new StorageKey(userId, sourceKey);
+        StorageKey targetStorageKey = new StorageKey(userId, targetKey);
         return sourceKey.endsWith("/")
-                ? moveFolder(userId, sourceKey, targetKey)
-                : moveFile(userId, sourceKey, targetKey);
+                ? moveFolder(sourceStorageKey, targetStorageKey)
+                : moveFile(sourceStorageKey, targetStorageKey);
     }
 
-    private ResourceInfoResponse moveFolder(int userId, String sourcePrefix, String targetPrefix) {
-        //TODO: think about exceptions
-        if (!sourcePrefix.endsWith("/")) {
-            sourcePrefix += "/";
-        }
-        if (!targetPrefix.endsWith("/")) {
-            targetPrefix += "/";
-        }
-        List<String> results = storageService.getObjectsNames(userId, sourcePrefix, true);
+    private ResourceInfoResponse moveFolder(StorageKey sourcePrefix, StorageKey targetPrefix) {
+        List<String> results = storageService.getObjectsNames(sourcePrefix, true);
         for (String sourceKey : results) {
-            var LastIndexOf = sourceKey.lastIndexOf(sourcePrefix);
-            String relativePath = sourceKey.substring(LastIndexOf + sourcePrefix.length());
+            var LastIndexOf = sourceKey.lastIndexOf(sourcePrefix.relativePath());
+            String relativePath = sourceKey.substring(LastIndexOf + sourcePrefix.relativePath().length());
             String targetKey = targetPrefix + relativePath;
-            moveObject(userId, sourceKey, targetKey);
+            StorageKey sourceStorageKey = new StorageKey(sourcePrefix.userId(), sourceKey);
+            StorageKey targetStorageKey = new StorageKey(targetPrefix.userId(), targetKey);
+            moveObject(sourceStorageKey, targetStorageKey);
         }
-        return resourceInfoService.getResourceInfo(targetPrefix, userId);
+        return resourceInfoService.getResourceInfo(targetPrefix);
     }
 
-    private ResourceInfoResponse moveFile(int userId, String sourceKey, String targetKey) {
-        moveObject(userId, sourceKey, targetKey);
-        return resourceInfoService.getResourceInfo(targetKey, userId);
+    private ResourceInfoResponse moveFile(StorageKey targetStorageKey, StorageKey sourceStorageKey) {
+        moveObject(targetStorageKey, sourceStorageKey);
+        return resourceInfoService.getResourceInfo(targetStorageKey);
     }
 
-    private void moveObject(int userId, String sourceKey, String targetKey) {
-        storageService.copyObject(userId, targetKey, sourceKey);
-        storageService.removeObject(userId, sourceKey);
+    private void moveObject(StorageKey targetStorageKey, StorageKey sourceStorageKey) {
+        storageService.copyObject(targetStorageKey, sourceStorageKey);
+        storageService.removeObject(sourceStorageKey);
     }
 }

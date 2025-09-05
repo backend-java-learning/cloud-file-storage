@@ -32,7 +32,7 @@ public class UserService {
             user.setPassword(passwordEncoder.encode(authorizeUserRequest.getPassword()));
             User savedUser = userRepository.save(user);
             savedUserId = savedUser.getId();
-            storageService.createEmptyFolder(savedUserId);
+            storageService.putEmptyFolder(savedUserId);
             return userMapper.toAuthorizedUserResponse(savedUser);
         } catch (DataIntegrityViolationException e) {
             throw new UserAlreadyExistsException("Пользователь с таким логином уже существует");

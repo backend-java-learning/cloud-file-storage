@@ -2,14 +2,13 @@ package com.example.service;
 
 import com.example.dto.ResourceInfoResponse;
 import com.example.dto.enums.ResourceType;
-import com.example.exception.ResourceNotFoundException;
 import com.example.mapper.ResourceInfoMapper;
+import com.example.models.StorageKey;
 import io.minio.StatObjectResponse;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.ByteArrayInputStream;
 import java.util.List;
 
 @Service
@@ -19,14 +18,15 @@ public class UploadService {
     private StorageService storageService;
     private ResourceInfoMapper resourceInfoMapper;
 
-    public List<ResourceInfoResponse> uploadFile(int userId, String folderPath, MultipartFile file) {
-        if (!storageService.doesObjectExist(userId, folderPath)) {
-            storageService.createEmptyFolder(userId, folderPath);
+    public List<ResourceInfoResponse> uploadFile(int userId, String objectName, MultipartFile file) {
+        StorageKey storageKey = new StorageKey(userId, objectName);
+        if (!storageService.doesObjectExist(storageKey)) {
+            storageService.putEmptyFolder(storageKey);
         }
-        storageService.putObject(userId, folderPath, file);
-        StatObjectResponse statObjectResponse = storageService.getStatObject(userId, folderPath);
+        storageService.putObject(storageKey, file);
+        StatObjectResponse statObjectResponse = storageService.getStatObject(storageKey);
         ResourceInfoResponse resourceInfoResponse = resourceInfoMapper
-                .toResourceInfo(statObjectResponse.size(), folderPath, file.getOriginalFilename(), ResourceType.FILE);
+                .toResourceInfo(statObjectResponse.size(), storageKey.relativePath(), file.getOriginalFilename(), ResourceType.FILE);
         return List.of(resourceInfoResponse);
     }
 

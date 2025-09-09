@@ -1,7 +1,6 @@
 package com.example.service;
 
 import com.example.dto.ResourceInfoResponse;
-import com.example.dto.enums.ResourceType;
 import com.example.mapper.ResourceInfoMapper;
 import com.example.models.StorageKey;
 import io.minio.StatObjectResponse;
@@ -18,15 +17,14 @@ public class UploadService {
     private StorageService storageService;
     private ResourceInfoMapper resourceInfoMapper;
 
-    public List<ResourceInfoResponse> uploadFile(int userId, String objectName, MultipartFile file) {
-        StorageKey storageKey = new StorageKey(userId, objectName);
+    public List<ResourceInfoResponse> uploadFile(StorageKey storageKey, MultipartFile file) {
         if (!storageService.doesObjectExist(storageKey)) {
             storageService.putEmptyFolder(storageKey);
         }
         storageService.putObject(storageKey, file);
         StatObjectResponse statObjectResponse = storageService.getStatObject(storageKey);
-        ResourceInfoResponse resourceInfoResponse = resourceInfoMapper
-                .toResourceInfo(statObjectResponse.size(), storageKey.relativePath(), file.getOriginalFilename(), ResourceType.FILE);
+        StorageKey statObjectStorageKey = StorageKey.parsePath(statObjectResponse.object());
+        ResourceInfoResponse resourceInfoResponse = resourceInfoMapper.toResourceInfo(statObjectStorageKey, statObjectResponse.size());
         return List.of(resourceInfoResponse);
     }
 

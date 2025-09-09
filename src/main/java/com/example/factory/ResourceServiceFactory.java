@@ -1,8 +1,8 @@
 package com.example.factory;
 
 import com.example.dto.enums.ResourceType;
-import com.example.service.domain.DirectoryService;
-import com.example.service.domain.FileService;
+import com.example.service.domain.DirectoryResourceService;
+import com.example.service.domain.FileResourceService;
 import com.example.service.domain.ResourceService;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -11,8 +11,8 @@ import org.springframework.stereotype.Component;
 @AllArgsConstructor
 public class ResourceServiceFactory {
 
-    private FileService fileService;
-    private DirectoryService directoryService;
+    private FileResourceService fileService;
+    private DirectoryResourceService directoryService;
 
     public ResourceService create(ResourceType type) {
         return switch (type) {

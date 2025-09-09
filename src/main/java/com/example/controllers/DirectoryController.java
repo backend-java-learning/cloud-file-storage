@@ -2,7 +2,6 @@ package com.example.controllers;
 
 import com.example.dto.ResourceInfoResponse;
 import com.example.models.User;
-import com.example.service.ResourceInfoService;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -16,11 +15,9 @@ import org.springframework.web.bind.annotation.RestController;
 @AllArgsConstructor
 public class DirectoryController {
 
-    private ResourceInfoService resourceInfoService;
-
-//    @GetMapping(value = "/directory")
-//    public ResponseEntity<ResourceInfoResponse> getResourceInfo(@AuthenticationPrincipal User user, @RequestParam String path) {
-//        ResourceInfoResponse resourceInfo = resourceInfoService.getDirectoryInfo(path, user.getId());
-//        return ResponseEntity.ok(resourceInfo);
-//    }
+    @GetMapping(value = "/directory")
+    public ResponseEntity<ResourceInfoResponse> getResourceInfo(@AuthenticationPrincipal User user, @RequestParam String path) {
+        //ResourceInfoResponse resourceInfo = resourceInfoService.getDirectoryInfo(path, user.getId());
+        return ResponseEntity.ok(new ResourceInfoResponse());
+    }
 }

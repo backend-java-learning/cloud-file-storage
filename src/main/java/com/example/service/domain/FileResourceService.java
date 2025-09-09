@@ -2,10 +2,8 @@ package com.example.service.domain;
 
 import com.example.dto.DownloadResult;
 import com.example.dto.ResourceInfoResponse;
-import com.example.dto.enums.ResourceType;
 import com.example.exception.StorageException;
 import com.example.mapper.ResourceInfoMapper;
-import com.example.models.ResourcePath;
 import com.example.models.StorageKey;
 import com.example.service.StorageService;
 import io.minio.StatObjectResponse;
@@ -15,11 +13,11 @@ import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 
 import java.io.InputStream;
-import java.nio.file.Paths;
+import java.util.List;
 
 @Service
 @AllArgsConstructor
-public class FileService implements ResourceService {
+public class FileResourceService implements ResourceService {
 
     private StorageService storageService;
     private ResourceInfoMapper resourceInfoMapper;
@@ -27,10 +25,8 @@ public class FileService implements ResourceService {
     @Override
     public ResourceInfoResponse getInfo(StorageKey storageKey) {
         StatObjectResponse statObjectResponse = storageService.getStatObject(storageKey);
-        String fileNameWithPath = statObjectResponse.object().replace(storageKey.getPrefix(), "");
-        ResourcePath resourcePath = ResourcePath.of(fileNameWithPath);
-        return resourceInfoMapper.toResourceInfo(statObjectResponse.size(), resourcePath.getParentPath(),
-                resourcePath.getFolderName(), ResourceType.FILE);
+        StorageKey statObjectStorageKey = StorageKey.parsePath(statObjectResponse.object());
+        return resourceInfoMapper.toResourceInfo(statObjectStorageKey, statObjectResponse.size());
     }
 
     @Override
@@ -45,7 +41,7 @@ public class FileService implements ResourceService {
             Resource resource = new InputStreamResource(stream);
             StatObjectResponse stat = storageService.getStatObject(storageKey);
             return new DownloadResult(
-                    Paths.get(storageKey.relativePath()).getFileName().toString(),
+                    storageKey.getPath(),
                     resource,
                     stat.size(),
                     stat.contentType() != null ? stat.contentType() : "application/octet-stream"
@@ -56,7 +52,13 @@ public class FileService implements ResourceService {
     }
 
     @Override
-    public ResourceInfoResponse rename() {
-        return null;
+    public ResourceInfoResponse move(StorageKey sourcePrefix, StorageKey targetPrefix) {
+        storageService.moveObject(targetPrefix, sourcePrefix);
+        return getInfo(targetPrefix);
+    }
+
+    @Override
+    public List<ResourceInfoResponse> upload(StorageKey storageKey) {
+        return List.of();
     }
 }

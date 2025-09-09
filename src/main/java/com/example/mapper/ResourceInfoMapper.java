@@ -1,7 +1,7 @@
 package com.example.mapper;
 
 import com.example.dto.ResourceInfoResponse;
-import com.example.dto.enums.ResourceType;
+import com.example.models.StorageKey;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingConstants;
@@ -9,14 +9,15 @@ import org.mapstruct.MappingConstants;
 @Mapper(componentModel = MappingConstants.ComponentModel.SPRING)
 public interface ResourceInfoMapper {
 
-    @Mapping(target = "path", source = "path")
-    @Mapping(target = "name", source = "name")
-    @Mapping(target = "type", source = "type")
+    @Mapping(target = "path", source = "storageKey.prefix")
+    @Mapping(target = "name", source = "storageKey.objectName")
+    @Mapping(target = "type", source = "storageKey.resourceType")
     @Mapping(target = "size", source = "size")
-    ResourceInfoResponse toResourceInfo(Long size, String path, String name, ResourceType type);
+    ResourceInfoResponse toResourceInfo(StorageKey storageKey, Long size);
 
-    @Mapping(target = "path", source = "path")
-    @Mapping(target = "name", source = "name")
-    @Mapping(target = "type", source = "type")
-    ResourceInfoResponse toResourceInfo(String path, String name, ResourceType type);
+    @Mapping(target = "path", source = "storageKey.prefix")
+    @Mapping(target = "name", source = "storageKey.objectName")
+    @Mapping(target = "type", source = "storageKey.resourceType")
+    @Mapping(target = "size", ignore = true)
+    ResourceInfoResponse toResourceInfo(StorageKey storageKey);
 }

@@ -9,6 +9,7 @@ import io.minio.errors.*;
 import io.minio.messages.DeleteObject;
 import io.minio.messages.Item;
 import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.InputStreamResource;
@@ -37,7 +38,7 @@ public class StorageService {
     }
 
     public void putEmptyFolder(int userId) {
-        putEmptyFolder(new StorageKey(userId, ""));
+        putEmptyFolder(StorageKey.createEmptyDirectoryKey(userId));
     }
 
     public void putEmptyFolder(StorageKey storageKey) {
@@ -46,13 +47,13 @@ public class StorageService {
     }
 
     public void removeObjects(int userId) {
-        removeObjects(new StorageKey(userId, ""));
+        removeObjects(StorageKey.createEmptyDirectoryKey(userId));
     }
 
     public void removeObjects(StorageKey storageKey) {
         var objectsToDelete = getDeleteObjects(storageKey.buildKey());
         if (objectsToDelete.isEmpty()) {
-            throw new ResourceNotFoundException("The directory [%s] doesn't exist".formatted(storageKey.relativePath()));
+            throw new ResourceNotFoundException("The directory [%s] doesn't exist".formatted(storageKey.getPath()));
         }
         var deleteErrors = minioClient.removeObjects(
                 RemoveObjectsArgs.builder()
@@ -61,7 +62,7 @@ public class StorageService {
                         .build()
         );
         if (StreamSupport.stream(deleteErrors.spliterator(), false).findAny().isPresent()) {
-            throw new DeleteResourceException("Unexpected issue while deleting objects by key [%s]".formatted(storageKey.relativePath()));
+            throw new DeleteResourceException("Unexpected issue while deleting objects by key [%s]".formatted(storageKey.getPath()));
         }
     }
 
@@ -98,16 +99,22 @@ public class StorageService {
                             .build());
         } catch (ErrorResponseException e) {
             if (e.errorResponse().code().equals("NoSuchKey")) {
-                throw new ResourceNotFoundException("Object [%s] doesn't exist".formatted(storageKey.relativePath()));
+                throw new ResourceNotFoundException("Object [%s] doesn't exist".formatted(storageKey.getPath()));
             }
-            throw new DeleteResourceException(storageKey.relativePath(), e);
+            throw new DeleteResourceException(storageKey.getPath(), e);
         } catch (Exception e) {
-            throw new DeleteResourceException(storageKey.relativePath(), e);
+            throw new DeleteResourceException(storageKey.getPath(), e);
         }
+    }
+
+    public void moveObject(StorageKey targetStorageKey, StorageKey sourceStorageKey) {
+        copyObject(targetStorageKey, sourceStorageKey);
+        removeObject(sourceStorageKey);
     }
 
     public StatObjectResponse getStatObject(StorageKey storageKey) {
         try {
+            var a = storageKey.buildKey();
             return minioClient.statObject(
                     StatObjectArgs.builder()
                             .bucket(bucket)
@@ -116,7 +123,7 @@ public class StorageService {
             );
         } catch (ErrorResponseException errorResponseException) {
             if (errorResponseException.errorResponse().code().equals("NoSuchKey")) {
-                throw new ResourceNotFoundException("Object [%s] doesn't exist".formatted(storageKey.relativePath()));
+                throw new ResourceNotFoundException("Object [%s] doesn't exist".formatted(storageKey.getPath()));
             }
             throw new StorageException("Unexpected issue while getting object information and metadata of an object", errorResponseException);
         } catch (Exception e) {
@@ -154,6 +161,14 @@ public class StorageService {
         Iterable<Result<Item>> results = listObjects(storageKey.buildKey(), isRecursive);
         return StreamSupport.stream(results.spliterator(), false).toList();
     }
+
+//    @SneakyThrows
+//    public List<Item> getListObjectItems(StorageKey storageKey, boolean isRecursive) {
+//        Iterable<Result<Item>> results = listObjects(storageKey.buildKey(), isRecursive);
+//        return StreamSupport.stream(results.spliterator(), false)
+//                .map(Result::get)
+//                .toList();
+//    }
 
     private void putObject(StorageKey storageKey, InputStreamSource inputStreamSource, long objectSize, String contentType) {
         try (InputStream is = inputStreamSource.getInputStream()) {

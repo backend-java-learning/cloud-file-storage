@@ -6,11 +6,7 @@ import com.example.exception.InvalidPathException;
 import com.example.factory.ResourceServiceFactory;
 import com.example.models.StorageKey;
 import com.example.models.User;
-import com.example.service.DownloadService;
-import com.example.service.RenameService;
-import com.example.service.ResourceInfoService;
 import com.example.service.UploadService;
-import com.example.service.domain.ResourceService;
 import lombok.AllArgsConstructor;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
@@ -30,17 +26,18 @@ public class ResourceController {
 
     private final ResourceServiceFactory resourceServiceFactory;
 
-    private RenameService renameService;
     private UploadService uploadService;
 
     @GetMapping(value = "/resource")
-    public ResponseEntity<ResourceInfoResponse> getResourceInfo(@AuthenticationPrincipal User user, @RequestParam String path) {
+    public ResponseEntity<ResourceInfoResponse> getResourceInfo(@AuthenticationPrincipal User user,
+                                                                @RequestParam String path) {
         if (path.isEmpty()) {
             throw new InvalidPathException("Resource path can't be empty");
         }
-        StorageKey storageKey = new StorageKey(user.getId(), path);
-        ResourceService resourceService = resourceServiceFactory.create(storageKey.getResourceType());
-        ResourceInfoResponse resourceInfo = resourceService.getInfo(storageKey);
+        StorageKey storageKey = StorageKey.parsePath(user.getId(), path);
+        ResourceInfoResponse resourceInfo = resourceServiceFactory
+                .create(storageKey.getResourceType())
+                .getInfo(storageKey);
         return ResponseEntity.ok(resourceInfo);
     }
 
@@ -51,15 +48,18 @@ public class ResourceController {
         if (!path.endsWith("/") && !path.isEmpty()) {
             throw new InvalidPathException("The path for folder have to end with '/'");
         }
-        List<ResourceInfoResponse> resourceInfoResponses = uploadService.uploadFile(user.getId(), path, file);
+        StorageKey storageKey = StorageKey.parsePath(user.getId(), path);
+        List<ResourceInfoResponse> resourceInfoResponses = uploadService.uploadFile(storageKey, file);
         return ResponseEntity.ok(resourceInfoResponses);
     }
 
     @GetMapping("/resource/download")
     private ResponseEntity<Resource> downloadResource(@AuthenticationPrincipal User user,
                                                       @RequestParam String path) {
-        StorageKey storageKey = new StorageKey(user.getId(), path);
-        DownloadResult result = resourceServiceFactory.create(storageKey.getResourceType()).download(storageKey);
+        StorageKey storageKey = StorageKey.parsePath(user.getId(), path);
+        DownloadResult result = resourceServiceFactory
+                .create(storageKey.getResourceType())
+                .download(storageKey);
         return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
                 .header(HttpHeaders.CONTENT_DISPOSITION,
@@ -71,7 +71,15 @@ public class ResourceController {
     public ResponseEntity<ResourceInfoResponse> moveResource(@AuthenticationPrincipal User user,
                                                              @RequestParam String from,
                                                              @RequestParam String to) {
-        ResourceInfoResponse resourceInfoResponse = renameService.moveResource(user.getId(), from, to);
+        StorageKey sourceStorageKey = StorageKey.parsePath(user.getId(), from);
+        StorageKey targetStorageKey = StorageKey.parsePath(user.getId(), to);
+        //TODO: add exception
+        if (sourceStorageKey.getResourceType() != targetStorageKey.getResourceType()) {
+           // throw
+        }
+        ResourceInfoResponse resourceInfoResponse = resourceServiceFactory
+                .create(sourceStorageKey.getResourceType())
+                .move(sourceStorageKey, targetStorageKey);
         return ResponseEntity.ok().body(resourceInfoResponse);
     }
 
@@ -80,8 +88,10 @@ public class ResourceController {
         if (path.isEmpty()) {
             throw new InvalidPathException("Resource path can't be empty");
         }
-        StorageKey storageKey = new StorageKey(user.getId(), path);
-        resourceServiceFactory.create(storageKey.getResourceType()).remove(storageKey);
+        StorageKey storageKey = StorageKey.parsePath(user.getId(), path);
+        resourceServiceFactory
+                .create(storageKey.getResourceType())
+                .remove(storageKey);
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 }

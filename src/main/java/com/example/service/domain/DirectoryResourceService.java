@@ -14,6 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.*;
 import java.nio.file.Paths;
@@ -76,16 +77,17 @@ public class DirectoryResourceService implements ResourceService {
     @Override
     public ResourceInfoResponse move(StorageKey sourceStorageKey, StorageKey targetStorageKey) {
         List<String> results = storageService.getObjectsNames(sourceStorageKey, true);
-        for (String sourceKey : results) {
-            StorageKey tempSourceStorageKey = StorageKey.parsePath(sourceKey);
-            StorageKey tempTargetStorageKey = tempSourceStorageKey.updatePrefix(targetStorageKey.getPrefix());
-            storageService.moveObject(tempSourceStorageKey, tempTargetStorageKey);
+        for (String oldPath : results) {
+            String newPath = oldPath.replace(sourceStorageKey.buildKey(), targetStorageKey.buildKey());
+            StorageKey oldStorageKey = StorageKey.parsePath(oldPath);
+            StorageKey newStorageKey = StorageKey.parsePath(newPath);
+            storageService.moveObject(oldStorageKey, newStorageKey);
         }
         return getInfo(targetStorageKey);
     }
 
     @Override
-    public List<ResourceInfoResponse> upload(StorageKey storageKey) {
+    public List<ResourceInfoResponse> upload(StorageKey storageKey, MultipartFile file) {
         return List.of();
     }
 

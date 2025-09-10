@@ -18,9 +18,6 @@ public class UploadService {
     private ResourceInfoMapper resourceInfoMapper;
 
     public List<ResourceInfoResponse> uploadFile(StorageKey storageKey, MultipartFile file) {
-        if (!storageService.doesObjectExist(storageKey)) {
-            storageService.putEmptyFolder(storageKey);
-        }
         storageService.putObject(storageKey, file);
         StatObjectResponse statObjectResponse = storageService.getStatObject(storageKey);
         StorageKey statObjectStorageKey = StorageKey.parsePath(statObjectResponse.object());
@@ -28,7 +25,7 @@ public class UploadService {
         return List.of(resourceInfoResponse);
     }
 
-//    public void uploadFiles(int userId, String bucket, String basePath, List<MultipartFile> files) {
+//    public void uploadFiles(int userId, String bucket, String basePath, MultipartFile files) {
 //        for (MultipartFile file : files) {
 //            String relativePath = file.getOriginalFilename();
 //            String key = "%s/%s".formatted(basePath, relativePath);

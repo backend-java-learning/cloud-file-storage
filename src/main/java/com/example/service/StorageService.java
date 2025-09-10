@@ -9,7 +9,6 @@ import io.minio.errors.*;
 import io.minio.messages.DeleteObject;
 import io.minio.messages.Item;
 import lombok.RequiredArgsConstructor;
-import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.InputStreamResource;
@@ -107,14 +106,13 @@ public class StorageService {
         }
     }
 
-    public void moveObject(StorageKey targetStorageKey, StorageKey sourceStorageKey) {
+    public void moveObject(StorageKey sourceStorageKey, StorageKey targetStorageKey) {
         copyObject(targetStorageKey, sourceStorageKey);
         removeObject(sourceStorageKey);
     }
 
     public StatObjectResponse getStatObject(StorageKey storageKey) {
         try {
-            var a = storageKey.buildKey();
             return minioClient.statObject(
                     StatObjectArgs.builder()
                             .bucket(bucket)

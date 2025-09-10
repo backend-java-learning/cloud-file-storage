@@ -11,6 +11,7 @@ import lombok.AllArgsConstructor;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.InputStream;
 import java.util.List;
@@ -53,12 +54,13 @@ public class FileResourceService implements ResourceService {
 
     @Override
     public ResourceInfoResponse move(StorageKey sourcePrefix, StorageKey targetPrefix) {
-        storageService.moveObject(targetPrefix, sourcePrefix);
+        storageService.moveObject(sourcePrefix, targetPrefix);
         return getInfo(targetPrefix);
     }
 
     @Override
-    public List<ResourceInfoResponse> upload(StorageKey storageKey) {
-        return List.of();
+    public List<ResourceInfoResponse> upload(StorageKey storageKey, MultipartFile file) {
+        storageService.putObject(storageKey, file);
+        return List.of(getInfo(storageKey));
     }
 }

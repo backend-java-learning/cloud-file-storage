@@ -6,7 +6,6 @@ import lombok.Getter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Getter
 public class StorageKey {
@@ -42,7 +41,7 @@ public class StorageKey {
 
     public String buildKey() {
         return key + path;
-                //path.startsWith(key) ? path : key + path;
+        //path.startsWith(key) ? path : key + path;
     }
 
     public StorageKey updatePrefix(String prefix) {
@@ -51,10 +50,14 @@ public class StorageKey {
 
     private static StorageKey parse(String key, String path) {
         List<String> parts = new ArrayList<>(Arrays.asList(path.split("/")));
+        return parse(key, parts, path.endsWith("/"));
+    }
+
+    private static StorageKey parse(String key, List<String> parts, boolean isDir) {
         if (parts.isEmpty() || parts.getFirst().isBlank()) {
-            throw new IllegalArgumentException("Invalid path: %s".formatted(path));
+            throw new IllegalArgumentException("Invalid path: path must not be null or empty");
         }
-        String objectName = path.endsWith("/")
+        String objectName = isDir
                 ? parts.removeLast() + "/"
                 : parts.removeLast();
         String prefix = parts.isEmpty()
@@ -64,48 +67,13 @@ public class StorageKey {
     }
 
     public static StorageKey parsePath(String fullPath) {
-        List<String> path = new ArrayList<>(Arrays.asList(fullPath.split("/")));
-        if (path.getFirst().matches("")) {
-            //TODO: add exception
-            //throw new
-        }
-
-        String key = path.getFirst();
-        path.removeFirst();
-        if (fullPath.endsWith("/")) {
-            String objectName = path.getLast() + "/";
-            path.removeLast();
-            String prefix = path.isEmpty()
-                    ? ""
-                    : path.stream().collect(Collectors.joining("/", "", "/"));
-            return new StorageKey(key, prefix, objectName);
-        }
-
-        String objectName = path.getLast();
-        path.removeLast();
-        String prefix = path.isEmpty()
-                ? ""
-                : path.stream().collect(Collectors.joining("/", "", "/"));
-        return new StorageKey(key, prefix, objectName);
+        List<String> pathList = new ArrayList<>(Arrays.asList(fullPath.split("/")));
+        String key = pathList.removeFirst() + "/";
+        return parse(key, pathList, fullPath.endsWith("/"));
     }
 
     public static StorageKey parsePath(int userId, String path) {
-        String key = "user-%s-files/".formatted(userId);
-        List<String> pathList = new ArrayList<>(Arrays.asList(path.split("/")));
-        if (path.endsWith("/")) {
-            String objectName = pathList.getLast() + "/";
-            pathList.removeLast();
-            String prefix = pathList.isEmpty()
-                    ? ""
-                    : pathList.stream().collect(Collectors.joining("/", "", "/"));
-            return new StorageKey(key, prefix, objectName);
-        }
-        String objectName = pathList.getLast();
-        pathList.removeLast();
-        String prefix = pathList.isEmpty()
-                ? ""
-                : pathList.stream().collect(Collectors.joining("/", "", "/"));
-        return new StorageKey(key, prefix, objectName);
+        return parse(KEY_PATTERN.formatted(userId), path);
     }
 
     public static StorageKey createEmptyDirectoryKey(int userId) {

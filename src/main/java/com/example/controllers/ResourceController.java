@@ -48,7 +48,7 @@ public class ResourceController {
         if (!path.endsWith("/") && !path.isEmpty()) {
             throw new InvalidPathException("The path for folder have to end with '/'");
         }
-        StorageKey storageKey = StorageKey.parsePath(user.getId(), path);
+        StorageKey storageKey = StorageKey.parsePath(user.getId(), path + file.getResource().getFilename());
         List<ResourceInfoResponse> resourceInfoResponses = uploadService.uploadFile(storageKey, file);
         return ResponseEntity.ok(resourceInfoResponses);
     }
@@ -75,7 +75,7 @@ public class ResourceController {
         StorageKey targetStorageKey = StorageKey.parsePath(user.getId(), to);
         //TODO: add exception
         if (sourceStorageKey.getResourceType() != targetStorageKey.getResourceType()) {
-           // throw
+            // throw
         }
         ResourceInfoResponse resourceInfoResponse = resourceServiceFactory
                 .create(sourceStorageKey.getResourceType())

@@ -25,11 +25,11 @@ import java.util.zip.ZipOutputStream;
 
 @Slf4j
 @Service
-@AllArgsConstructor
-public class DirectoryResourceService implements ResourceService, DirectoryService {
+public class DirectoryResourceService extends AbstractResourceService implements DirectoryService {
 
-    private StorageService storageService;
-    private ResourceInfoMapper resourceInfoMapper;
+    public DirectoryResourceService(StorageService storageService, ResourceInfoMapper resourceInfoMapper) {
+        super(storageService, resourceInfoMapper);
+    }
 
     @Override
     public ResourceInfoResponse getInfo(StorageKey storageKey) {
@@ -88,13 +88,9 @@ public class DirectoryResourceService implements ResourceService, DirectoryServi
     }
 
     @Override
-    public List<ResourceInfoResponse> upload(StorageKey storageKey, MultipartFile file) {
-        return List.of();
-    }
-
-    @Override
-    public void createEmptyFolder(StorageKey storageKey) {
+    public ResourceInfoResponse createEmptyFolder(StorageKey storageKey) {
         storageService.putEmptyFolder(storageKey);
+        return getInfo(storageKey);
     }
 
     @Override

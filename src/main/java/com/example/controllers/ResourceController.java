@@ -6,7 +6,6 @@ import com.example.exception.InvalidPathException;
 import com.example.factory.ResourceServiceFactory;
 import com.example.models.StorageKey;
 import com.example.models.User;
-import com.example.service.UploadService;
 import lombok.AllArgsConstructor;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
@@ -25,8 +24,6 @@ import java.util.List;
 public class ResourceController {
 
     private final ResourceServiceFactory resourceServiceFactory;
-
-    private UploadService uploadService;
 
     @GetMapping(value = "/resource")
     public ResponseEntity<ResourceInfoResponse> getResourceInfo(@AuthenticationPrincipal User user,
@@ -48,8 +45,12 @@ public class ResourceController {
         if (!path.endsWith("/") && !path.isEmpty()) {
             throw new InvalidPathException("The path for folder have to end with '/'");
         }
+        //TODO: check what happens here
         StorageKey storageKey = StorageKey.parsePath(user.getId(), path + object.getFirst().getResource().getFilename());
-        List<ResourceInfoResponse> resourceInfoResponses = uploadService.uploadFile(storageKey, object);
+        List<ResourceInfoResponse> resourceInfoResponses = resourceServiceFactory
+                .create(storageKey.getResourceType())
+                .upload(storageKey, object);
+                //uploadService.uploadFile(storageKey, object);
         return ResponseEntity.ok(resourceInfoResponses);
     }
 

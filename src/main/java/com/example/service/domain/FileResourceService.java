@@ -8,20 +8,16 @@ import com.example.models.StorageKey;
 import com.example.service.StorageService;
 import io.minio.GetObjectResponse;
 import io.minio.StatObjectResponse;
-import lombok.AllArgsConstructor;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
-
-import java.util.List;
 
 @Service
-@AllArgsConstructor
-public class FileResourceService implements ResourceService {
+public class FileResourceService extends AbstractResourceService {
 
-    private StorageService storageService;
-    private ResourceInfoMapper resourceInfoMapper;
+    public FileResourceService(StorageService storageService, ResourceInfoMapper resourceInfoMapper) {
+        super(storageService, resourceInfoMapper);
+    }
 
     @Override
     public ResourceInfoResponse getInfo(StorageKey storageKey) {
@@ -56,11 +52,5 @@ public class FileResourceService implements ResourceService {
     public ResourceInfoResponse move(StorageKey sourcePrefix, StorageKey targetPrefix) {
         storageService.moveObject(sourcePrefix, targetPrefix);
         return getInfo(targetPrefix);
-    }
-
-    @Override
-    public List<ResourceInfoResponse> upload(StorageKey storageKey, MultipartFile file) {
-        storageService.putObject(storageKey, file);
-        return List.of(getInfo(storageKey));
     }
 }

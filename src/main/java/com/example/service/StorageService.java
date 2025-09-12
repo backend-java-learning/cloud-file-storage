@@ -199,30 +199,6 @@ public class StorageService {
         }
     }
 
-    private void uploadObject(StorageKey storageKey, InputStreamSource inputStreamSource, long objectSize, String contentType) {
-        try (InputStream is = inputStreamSource.getInputStream()) {
-            minioClient.putObject(
-                    PutObjectArgs.builder()
-                            .bucket(bucket)
-                            .object(storageKey.buildKey())
-                            .stream(is, objectSize, -1)
-                            .contentType(contentType)
-                            .build()
-            );
-        } catch (ErrorResponseException errorResponseException) {
-            if (errorResponseException.errorResponse().code().equals("NoSuchKey")) {
-                throw new ResourceNotFoundException("Object doesn't exist");
-            }
-            throw new StorageException("Unexpected issue while put object in bucket", errorResponseException);
-        } catch (IOException ioException) {
-            throw new StorageException(
-                    "I/O error while uploading object [%s] to bucket [%s]. Possible network or file stream issue."
-                            .formatted(storageKey.buildKey(), bucket), ioException);
-        } catch (Exception exception) {
-            throw new StorageException("Unexpected issue while put object in bucket", exception);
-        }
-    }
-
     public List<String> getObjectsNames(StorageKey storageKey, boolean isRecursive) {
         return StreamSupport.stream(listObjects(storageKey.buildKey(), isRecursive).spliterator(), false)
                 .map(result -> {

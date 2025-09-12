@@ -1,4 +1,4 @@
-package com.example.security;
+package com.example.config.security;
 
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;

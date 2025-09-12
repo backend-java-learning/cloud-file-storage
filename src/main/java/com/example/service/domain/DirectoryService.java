@@ -6,6 +6,6 @@ import com.example.models.StorageKey;
 import java.util.List;
 
 public interface DirectoryService {
-    void createEmptyFolder(StorageKey storageKey);
+    ResourceInfoResponse createEmptyFolder(StorageKey storageKey);
     List<ResourceInfoResponse> getDirectoryDetails(StorageKey storageKey);
 }

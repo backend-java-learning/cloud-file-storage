@@ -12,5 +12,5 @@ public interface ResourceService {
     void remove(StorageKey storageKey);
     DownloadResult download(StorageKey storageKey);
     ResourceInfoResponse move(StorageKey sourcePrefix, StorageKey targetPrefix);
-    List<ResourceInfoResponse> upload(StorageKey storageKey, MultipartFile file);
+    List<ResourceInfoResponse> upload(StorageKey storageKey, List<MultipartFile> file);
 }

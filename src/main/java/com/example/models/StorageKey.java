@@ -34,9 +34,10 @@ public class StorageKey {
         this.prefix = prefix == null ? "" : prefix;
         this.objectName = objectName == null ? "" : objectName;
         this.path = this.prefix + this.objectName;
-        this.resourceType = (this.objectName.isEmpty() || !this.objectName.endsWith("/"))
-                ? ResourceType.FILE
-                : ResourceType.DIRECTORY;
+        this.resourceType = (key + path).endsWith("/")
+                //(this.objectName.isEmpty() || !this.objectName.endsWith("/"))
+                ? ResourceType.DIRECTORY
+                : ResourceType.FILE;
     }
 
     public String buildKey() {
@@ -55,7 +56,7 @@ public class StorageKey {
 
     private static StorageKey parse(String key, List<String> parts, boolean isDir) {
         if (parts.isEmpty() || parts.getFirst().isBlank()) {
-            throw new IllegalArgumentException("Invalid path: path must not be null or empty");
+            return new StorageKey(key, "", "");
         }
         String objectName = isDir
                 ? parts.removeLast() + "/"

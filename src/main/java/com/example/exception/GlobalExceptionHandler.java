@@ -1,12 +1,14 @@
 package com.example.exception;
 
 import com.example.dto.ErrorResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
+@Slf4j
 @ControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -41,8 +43,9 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ErrorResponse> handleRuntimeException(RuntimeException runtimeException) {
+    public ResponseEntity<ErrorResponse> handleRuntimeException(Exception runtimeException) {
         //TODO: add loger
+        log.error("Exception appeared", runtimeException);
         return setMessage(ResponseEntity.internalServerError(), "Something went wrong");
     }
 

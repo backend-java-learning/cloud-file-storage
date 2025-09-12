@@ -8,6 +8,7 @@ import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -25,11 +26,14 @@ public class UploadService {
         return List.of(resourceInfoResponse);
     }
 
-//    public void uploadFiles(int userId, String bucket, String basePath, MultipartFile files) {
-//        for (MultipartFile file : files) {
-//            String relativePath = file.getOriginalFilename();
-//            String key = "%s/%s".formatted(basePath, relativePath);
-//            storageService.putObject(userId, bucket, key, file);
-//        }
-//    }
+    public List<ResourceInfoResponse> uploadFile(StorageKey storageKey, List<MultipartFile> files) {
+        List<ResourceInfoResponse> uploadedFiles = new ArrayList<>();
+        for (MultipartFile file : files) {
+            storageService.putObject(storageKey, file);
+            StatObjectResponse statObjectResponse = storageService.getStatObject(storageKey);
+            StorageKey statObjectStorageKey = StorageKey.parsePath(statObjectResponse.object());
+            uploadedFiles.add(resourceInfoMapper.toResourceInfo(statObjectStorageKey, statObjectResponse.size()));
+        }
+        return uploadedFiles;
+    }
 }

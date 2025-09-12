@@ -44,12 +44,12 @@ public class ResourceController {
     @PostMapping("/resource")
     public ResponseEntity<List<ResourceInfoResponse>> uploadFile(@AuthenticationPrincipal User user,
                                                                  @RequestParam String path,
-                                                                 @RequestParam MultipartFile file) {
+                                                                 @RequestParam List<MultipartFile> object) {
         if (!path.endsWith("/") && !path.isEmpty()) {
             throw new InvalidPathException("The path for folder have to end with '/'");
         }
-        StorageKey storageKey = StorageKey.parsePath(user.getId(), path + file.getResource().getFilename());
-        List<ResourceInfoResponse> resourceInfoResponses = uploadService.uploadFile(storageKey, file);
+        StorageKey storageKey = StorageKey.parsePath(user.getId(), path + object.getFirst().getResource().getFilename());
+        List<ResourceInfoResponse> resourceInfoResponses = uploadService.uploadFile(storageKey, object);
         return ResponseEntity.ok(resourceInfoResponses);
     }
 
@@ -62,8 +62,7 @@ public class ResourceController {
                 .download(storageKey);
         return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                .header(HttpHeaders.CONTENT_DISPOSITION,
-                        "attachment; filename=\"" + result.fileName() + "\"")
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + result.fileName() + "\"")
                 .body(result.resource());
     }
 

@@ -18,6 +18,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.*;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -25,7 +26,7 @@ import java.util.zip.ZipOutputStream;
 @Slf4j
 @Service
 @AllArgsConstructor
-public class DirectoryResourceService implements ResourceService {
+public class DirectoryResourceService implements ResourceService, DirectoryService {
 
     private StorageService storageService;
     private ResourceInfoMapper resourceInfoMapper;
@@ -91,13 +92,23 @@ public class DirectoryResourceService implements ResourceService {
         return List.of();
     }
 
+    @Override
     public void createEmptyFolder(StorageKey storageKey) {
         storageService.putEmptyFolder(storageKey);
     }
 
+    @Override
     public List<ResourceInfoResponse> getDirectoryDetails(StorageKey storageKey) {
-        //List<Item> items = storageService.getListObjectItems(storageKey, false);
-        //resourceInfoMapper.
-        return List.of();
+        List<Item> items = storageService.getListObjectItems(storageKey, false);
+        List<ResourceInfoResponse> resourceInfoResponses = new ArrayList<>();
+        for (Item item : items) {
+            if (item.objectName().equals(storageKey.buildKey())) {
+                continue;
+            }
+            StorageKey storageKeyInfo = StorageKey.parsePath(item.objectName());
+            ResourceInfoResponse response = resourceInfoMapper.toResourceInfo(storageKeyInfo, item.size());
+            resourceInfoResponses.add(response);
+        }
+        return resourceInfoResponses;
     }
 }

@@ -1,7 +1,7 @@
 package com.example.config;
 
 import com.example.service.domain.DirectoryResourceService;
-import com.example.service.domain.DirectoryService;
+import com.example.service.DirectoryService;
 import lombok.AllArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

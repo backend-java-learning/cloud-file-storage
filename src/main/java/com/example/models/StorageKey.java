@@ -35,18 +35,12 @@ public class StorageKey {
         this.objectName = objectName == null ? "" : objectName;
         this.path = this.prefix + this.objectName;
         this.resourceType = (key + path).endsWith("/")
-                //(this.objectName.isEmpty() || !this.objectName.endsWith("/"))
                 ? ResourceType.DIRECTORY
                 : ResourceType.FILE;
     }
 
     public String buildKey() {
         return key + path;
-        //path.startsWith(key) ? path : key + path;
-    }
-
-    public StorageKey updatePrefix(String prefix) {
-        return new StorageKey(key, prefix, objectName);
     }
 
     private static StorageKey parse(String key, String path) {

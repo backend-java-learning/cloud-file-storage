@@ -3,6 +3,7 @@ package com.example.service.domain;
 import com.example.dto.ResourceInfoResponse;
 import com.example.mapper.ResourceInfoMapper;
 import com.example.models.StorageKey;
+import com.example.service.ResourceService;
 import com.example.service.StorageService;
 import io.minio.StatObjectResponse;
 import lombok.AllArgsConstructor;

@@ -1,4 +1,4 @@
-package com.example.service.domain;
+package com.example.service;
 
 import com.example.dto.ResourceInfoResponse;
 import com.example.models.StorageKey;

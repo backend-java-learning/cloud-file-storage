@@ -3,7 +3,7 @@ package com.example.controllers;
 import com.example.dto.ResourceInfoResponse;
 import com.example.models.StorageKey;
 import com.example.models.User;
-import com.example.service.domain.DirectoryService;
+import com.example.service.DirectoryService;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;

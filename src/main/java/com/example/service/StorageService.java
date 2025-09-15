@@ -36,10 +36,6 @@ public class StorageService {
         putObject(storageKey, file, file.getSize(), file.getContentType());
     }
 
-    public void putEmptyFolder(int userId) {
-        putEmptyFolder(StorageKey.createEmptyDirectoryKey(userId));
-    }
-
     public void putEmptyFolder(StorageKey storageKey) {
         InputStreamResource emptyStream = new InputStreamResource(new ByteArrayInputStream(new byte[0]));
         putObject(storageKey, emptyStream, 0, "application/x-directory");
@@ -151,33 +147,29 @@ public class StorageService {
         }
     }
 
-    public boolean doesObjectExist(StorageKey storageKey) {
-        return listObjects(storageKey.buildKey(), false).iterator().hasNext();
-    }
-
     public List<Result<Item>> getListObjects(StorageKey storageKey, boolean isRecursive) {
         Iterable<Result<Item>> results = listObjects(storageKey.buildKey(), isRecursive);
         return StreamSupport.stream(results.spliterator(), false).toList();
     }
 
-    public List<Item> getListObjectItems(StorageKey storageKey, boolean isRecursive) {
-        Iterable<Result<Item>> results = listObjects(storageKey.buildKey(), isRecursive);
-        List<Item> itemsList = new ArrayList<>();
-        for (Result<Item> result : results) {
-            try {
-                itemsList.add(result.get());
-            } catch (Exception e) {
-                log.error("Failed to process object for getting information in bucket [{}] with prefix [{}]", bucket, storageKey.buildKey(), e);
-                throw new StorageException("Error while building delete objects list for bucket [%s], prefix [%s]"
-                        .formatted(bucket, storageKey.buildKey()), e);
-            }
-        }
-        return itemsList;
-    }
+//    public List<Item> getListObjectItems(StorageKey storageKey, boolean isRecursive) {
+//        Iterable<Result<Item>> results = listObjects(storageKey.buildKey(), isRecursive);
+//        List<Item> itemsList = new ArrayList<>();
+//        for (Result<Item> result : results) {
+//            try {
+//                itemsList.add(result.get());
+//            } catch (Exception e) {
+//                log.error("Failed to process object for getting information in bucket [{}] with prefix [{}]", bucket, storageKey.buildKey(), e);
+//                throw new StorageException("Error while building delete objects list for bucket [%s], prefix [%s]"
+//                        .formatted(bucket, storageKey.buildKey()), e);
+//            }
+//        }
+//        return itemsList;
+//    }
 
-    private void putObject(StorageKey storageKey, InputStreamSource inputStreamSource, long objectSize, String contentType) {
+    private ObjectWriteResponse putObject(StorageKey storageKey, InputStreamSource inputStreamSource, long objectSize, String contentType) {
         try (InputStream is = inputStreamSource.getInputStream()) {
-            minioClient.putObject(
+            return minioClient.putObject(
                     PutObjectArgs.builder()
                             .bucket(bucket)
                             .object(storageKey.buildKey())

@@ -50,7 +50,6 @@ public class ResourceController {
         List<ResourceInfoResponse> resourceInfoResponses = resourceServiceFactory
                 .create(storageKey.getResourceType())
                 .upload(storageKey, object);
-                //uploadService.uploadFile(storageKey, object);
         return ResponseEntity.ok(resourceInfoResponses);
     }
 

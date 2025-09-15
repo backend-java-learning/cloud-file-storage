@@ -5,8 +5,10 @@ import com.example.dto.ResourceInfoResponse;
 import com.example.exception.ResourceNotFoundException;
 import com.example.exception.StorageException;
 import com.example.mapper.ResourceInfoMapper;
+import com.example.models.FileMetadata;
 import com.example.models.StorageKey;
 import com.example.service.DirectoryService;
+import com.example.service.FileMetadataService;
 import com.example.service.StorageService;
 import io.minio.Result;
 import io.minio.messages.Item;
@@ -17,8 +19,8 @@ import org.springframework.stereotype.Service;
 
 import java.io.*;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -26,22 +28,22 @@ import java.util.zip.ZipOutputStream;
 @Service
 public class DirectoryResourceService extends AbstractResourceService implements DirectoryService {
 
-    public DirectoryResourceService(StorageService storageService, ResourceInfoMapper resourceInfoMapper) {
-        super(storageService, resourceInfoMapper);
+    public DirectoryResourceService(StorageService storageService,
+                                    FileMetadataService fileMetadataService,
+                                    ResourceInfoMapper resourceInfoMapper) {
+        super(storageService, fileMetadataService, resourceInfoMapper);
     }
 
     @Override
     public ResourceInfoResponse getInfo(StorageKey storageKey) {
-        if (!storageService.doesObjectExist(storageKey)) {
-            log.error("Directory [{}] doesn't exist", storageKey.buildKey());
-            throw new ResourceNotFoundException("Directory [%s] doesn't exist".formatted(storageKey.getPath()));
-        }
-        return resourceInfoMapper.toResourceInfo(storageKey);
+        //TODO: Validate
+        return super.getInfo(storageKey);
     }
 
     @Override
     public void remove(StorageKey storageKey) {
         storageService.removeObjects(storageKey);
+        fileMetadataService.deleteByPath(storageKey.getKey(), storageKey.getPrefix());
     }
 
     @Override
@@ -76,12 +78,14 @@ public class DirectoryResourceService extends AbstractResourceService implements
 
     @Override
     public ResourceInfoResponse move(StorageKey sourceStorageKey, StorageKey targetStorageKey) {
+        //TODO: check different types
         List<String> results = storageService.getObjectsNames(sourceStorageKey, true);
         for (String oldPath : results) {
             String newPath = oldPath.replace(sourceStorageKey.buildKey(), targetStorageKey.buildKey());
             StorageKey oldStorageKey = StorageKey.parsePath(oldPath);
             StorageKey newStorageKey = StorageKey.parsePath(newPath);
             storageService.moveObject(oldStorageKey, newStorageKey);
+            fileMetadataService.updateFileMetadata(oldStorageKey, newStorageKey);
         }
         return getInfo(targetStorageKey);
     }
@@ -89,21 +93,20 @@ public class DirectoryResourceService extends AbstractResourceService implements
     @Override
     public ResourceInfoResponse createEmptyFolder(StorageKey storageKey) {
         storageService.putEmptyFolder(storageKey);
+        fileMetadataService.save(storageKey);
         return getInfo(storageKey);
     }
 
     @Override
     public List<ResourceInfoResponse> getDirectoryDetails(StorageKey storageKey) {
-        List<Item> items = storageService.getListObjectItems(storageKey, false);
-        List<ResourceInfoResponse> resourceInfoResponses = new ArrayList<>();
-        for (Item item : items) {
-            if (item.objectName().equals(storageKey.buildKey())) {
-                continue;
-            }
-            StorageKey storageKeyInfo = StorageKey.parsePath(item.objectName());
-            ResourceInfoResponse response = resourceInfoMapper.toResourceInfo(storageKeyInfo, item.size());
-            resourceInfoResponses.add(response);
+        Optional<FileMetadata> fileMetadataOptional = fileMetadataService.findOne(storageKey.getKey(), storageKey.getPrefix(),
+                storageKey.getObjectName());
+        if (fileMetadataOptional.isEmpty()) {
+            throw new ResourceNotFoundException("Directory [%s] doesn't exist".formatted(storageKey.getPath()));
         }
-        return resourceInfoResponses;
+        List<FileMetadata> filesMetadata = fileMetadataService.findByKeyAndPath(storageKey.getKey(), storageKey.getPath());
+        return filesMetadata.stream()
+                .filter(fileMetadata -> !fileMetadata.getName().equals(storageKey.getObjectName()))
+                .map(resourceInfoMapper::toDto).toList();
     }
 }

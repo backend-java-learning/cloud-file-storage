@@ -4,6 +4,7 @@ import com.example.dto.AuthorizeUserRequest;
 import com.example.dto.AuthorizedUserResponse;
 import com.example.exception.UserAlreadyExistsException;
 import com.example.mapper.UserMapper;
+import com.example.models.StorageKey;
 import com.example.models.User;
 import com.example.repository.UserRepository;
 import jakarta.transaction.Transactional;
@@ -23,6 +24,7 @@ public class UserService {
     private UserMapper userMapper;
     private PasswordEncoder passwordEncoder;
     private StorageService storageService;
+    private DirectoryService directoryService;
 
     @Transactional
     public AuthorizedUserResponse registerUser(AuthorizeUserRequest authorizeUserRequest) {
@@ -32,7 +34,7 @@ public class UserService {
             user.setPassword(passwordEncoder.encode(authorizeUserRequest.getPassword()));
             User savedUser = userRepository.save(user);
             savedUserId = savedUser.getId();
-            storageService.putEmptyFolder(savedUserId);
+            directoryService.createEmptyFolder(StorageKey.createEmptyDirectoryKey(savedUserId));
             return userMapper.toAuthorizedUserResponse(savedUser);
         } catch (DataIntegrityViolationException e) {
             throw new UserAlreadyExistsException("Пользователь с таким логином уже существует");

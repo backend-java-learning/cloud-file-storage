@@ -5,30 +5,42 @@ import com.example.dto.ResourceInfoResponse;
 import com.example.exception.StorageException;
 import com.example.mapper.ResourceInfoMapper;
 import com.example.models.StorageKey;
+import com.example.service.FileMetadataService;
 import com.example.service.StorageService;
 import io.minio.GetObjectResponse;
 import io.minio.StatObjectResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 
+@Slf4j
 @Service
 public class FileResourceService extends AbstractResourceService {
 
-    public FileResourceService(StorageService storageService, ResourceInfoMapper resourceInfoMapper) {
-        super(storageService, resourceInfoMapper);
+    public FileResourceService(StorageService storageService,
+                               FileMetadataService fileMetadataService,
+                               ResourceInfoMapper resourceInfoMapper) {
+        super(storageService, fileMetadataService, resourceInfoMapper);
     }
 
     @Override
     public ResourceInfoResponse getInfo(StorageKey storageKey) {
-        StatObjectResponse statObjectResponse = storageService.getStatObject(storageKey);
-        StorageKey statObjectStorageKey = StorageKey.parsePath(statObjectResponse.object());
-        return resourceInfoMapper.toResourceInfo(statObjectStorageKey, statObjectResponse.size());
+        //TODO: Validation
+        return super.getInfo(storageKey);
+    }
+
+    @Override
+    public ResourceInfoResponse move(StorageKey sourcePrefix, StorageKey targetPrefix) {
+        storageService.moveObject(sourcePrefix, targetPrefix);
+        fileMetadataService.updateFileMetadata(sourcePrefix, targetPrefix);
+        return getInfo(targetPrefix);
     }
 
     @Override
     public void remove(StorageKey storageKey) {
         storageService.removeObject(storageKey);
+        fileMetadataService.deleteByStorageKey(storageKey);
     }
 
     @Override
@@ -46,11 +58,5 @@ public class FileResourceService extends AbstractResourceService {
         } catch (Exception e) {
             throw new StorageException("Failed to download object: " + storageKey.buildKey(), e);
         }
-    }
-
-    @Override
-    public ResourceInfoResponse move(StorageKey sourcePrefix, StorageKey targetPrefix) {
-        storageService.moveObject(sourcePrefix, targetPrefix);
-        return getInfo(targetPrefix);
     }
 }

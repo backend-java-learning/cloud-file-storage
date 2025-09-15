@@ -12,5 +12,7 @@ public interface FileMetadataRepository extends JpaRepository<FileMetadata, Inte
 
     List<FileMetadata> findByKeyAndPath(String key, String path);
 
+    List<FileMetadata> findByKeyAndNameContaining(String key, String name);
+
     void deleteByKeyAndPath(String key, String path);
 }

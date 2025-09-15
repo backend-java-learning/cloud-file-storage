@@ -1,7 +1,9 @@
 package com.example.service;
 
+import com.example.dto.ResourceInfoResponse;
 import com.example.exception.ResourceNotFoundException;
 import com.example.mapper.FileMetadataMapper;
+import com.example.mapper.ResourceInfoMapper;
 import com.example.models.FileMetadata;
 import com.example.models.StorageKey;
 import com.example.repository.FileMetadataRepository;
@@ -19,6 +21,7 @@ public class FileMetadataService {
 
     private final FileMetadataRepository fileMetadataRepository;
     private final FileMetadataMapper fileMetadataMapper;
+    private final ResourceInfoMapper resourceInfoMapper;
 
     @Transactional
     public void updateFileMetadata(StorageKey oldKey, StorageKey newKey) {
@@ -43,6 +46,11 @@ public class FileMetadataService {
 
     public List<FileMetadata> findByKeyAndPath(String key, String path) {
         return fileMetadataRepository.findByKeyAndPath(key, path);
+    }
+
+    public List<ResourceInfoResponse> findByKeyAndNameContaining(String key, String name) {
+        return fileMetadataRepository.findByKeyAndNameContaining(key, name).stream()
+                .map(resourceInfoMapper::toDto).toList();
     }
 
     @Transactional

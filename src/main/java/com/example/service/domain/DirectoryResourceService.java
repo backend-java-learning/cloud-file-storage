@@ -77,20 +77,6 @@ public class DirectoryResourceService extends AbstractResourceService implements
     }
 
     @Override
-    public ResourceInfoResponse move(StorageKey sourceStorageKey, StorageKey targetStorageKey) {
-        //TODO: check different types
-        List<String> results = storageService.getObjectsNames(sourceStorageKey, true);
-        for (String oldPath : results) {
-            String newPath = oldPath.replace(sourceStorageKey.buildKey(), targetStorageKey.buildKey());
-            StorageKey oldStorageKey = StorageKey.parsePath(oldPath);
-            StorageKey newStorageKey = StorageKey.parsePath(newPath);
-            storageService.moveObject(oldStorageKey, newStorageKey);
-            fileMetadataService.updateFileMetadata(oldStorageKey, newStorageKey);
-        }
-        return getInfo(targetStorageKey);
-    }
-
-    @Override
     public ResourceInfoResponse createEmptyFolder(StorageKey storageKey) {
         storageService.putEmptyFolder(storageKey);
         fileMetadataService.save(storageKey);
@@ -108,5 +94,19 @@ public class DirectoryResourceService extends AbstractResourceService implements
         return filesMetadata.stream()
                 .filter(fileMetadata -> !fileMetadata.getName().equals(storageKey.getObjectName()))
                 .map(resourceInfoMapper::toDto).toList();
+    }
+
+    @Override
+    public ResourceInfoResponse move(StorageKey sourceStorageKey, StorageKey targetStorageKey) {
+        //TODO: check different types
+        List<String> results = storageService.getObjectsNames(sourceStorageKey, true);
+        for (String oldPath : results) {
+            String newPath = oldPath.replace(sourceStorageKey.buildKey(), targetStorageKey.buildKey());
+            StorageKey oldStorageKey = StorageKey.parsePath(oldPath);
+            StorageKey newStorageKey = StorageKey.parsePath(newPath);
+            storageService.moveObject(oldStorageKey, newStorageKey);
+            fileMetadataService.updateFileMetadata(oldStorageKey, newStorageKey);
+        }
+        return getInfo(targetStorageKey);
     }
 }

@@ -74,5 +74,9 @@ public class StorageKey {
     public static StorageKey createEmptyDirectoryKey(int userId) {
         return new StorageKey(userId, "", "");
     }
+
+    public static String getKey(int userId) {
+        return KEY_PATTERN.formatted(userId);
+    }
 }
 

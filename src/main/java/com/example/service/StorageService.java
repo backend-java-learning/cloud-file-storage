@@ -152,21 +152,6 @@ public class StorageService {
         return StreamSupport.stream(results.spliterator(), false).toList();
     }
 
-//    public List<Item> getListObjectItems(StorageKey storageKey, boolean isRecursive) {
-//        Iterable<Result<Item>> results = listObjects(storageKey.buildKey(), isRecursive);
-//        List<Item> itemsList = new ArrayList<>();
-//        for (Result<Item> result : results) {
-//            try {
-//                itemsList.add(result.get());
-//            } catch (Exception e) {
-//                log.error("Failed to process object for getting information in bucket [{}] with prefix [{}]", bucket, storageKey.buildKey(), e);
-//                throw new StorageException("Error while building delete objects list for bucket [%s], prefix [%s]"
-//                        .formatted(bucket, storageKey.buildKey()), e);
-//            }
-//        }
-//        return itemsList;
-//    }
-
     private ObjectWriteResponse putObject(StorageKey storageKey, InputStreamSource inputStreamSource, long objectSize, String contentType) {
         try (InputStream is = inputStreamSource.getInputStream()) {
             return minioClient.putObject(

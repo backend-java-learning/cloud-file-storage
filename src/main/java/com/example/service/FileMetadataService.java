@@ -49,7 +49,7 @@ public class FileMetadataService {
     }
 
     public List<ResourceInfoResponse> findByKeyAndNameContaining(String key, String name) {
-        return fileMetadataRepository.findByKeyAndNameContaining(key, name).stream()
+        return fileMetadataRepository.findByKeyAndNameContainingIgnoreCase(key, name).stream()
                 .map(resourceInfoMapper::toDto).toList();
     }
 

@@ -1,6 +1,6 @@
 package com.example.service.domain;
 
-import com.example.dto.ResourceInfoResponse;
+import com.example.dto.ResourceInfoDto;
 import com.example.exception.ResourceNotFoundException;
 import com.example.mapper.ResourceInfoMapper;
 import com.example.models.FileMetadata;
@@ -27,31 +27,31 @@ public abstract class AbstractResourceService implements ResourceService {
     protected final ResourceInfoMapper resourceInfoMapper;
 
     @Override
-    public ResourceInfoResponse getInfo(StorageKey storageKey) {
+    public ResourceInfoDto getInfo(StorageKey storageKey) {
         Optional<FileMetadata> fileMetadataOptional = fileMetadataService.findByStorageKey(storageKey);
         if (fileMetadataOptional.isEmpty()) {
             log.error("Resource [{}] doesn't exist", storageKey.buildKey());
             throw new ResourceNotFoundException("Resource [%s] doesn't exist".formatted(storageKey.getPath()));
         }
-        return resourceInfoMapper.toDto(fileMetadataOptional.get());
+        return resourceInfoMapper.toResourceInfoDto(fileMetadataOptional.get());
     }
 
     @Override
-    public List<ResourceInfoResponse> upload(StorageKey storageKey, List<MultipartFile> files) {
-        List<ResourceInfoResponse> uploadedFiles = new ArrayList<>();
+    public List<ResourceInfoDto> upload(StorageKey storageKey, List<MultipartFile> files) {
+        List<ResourceInfoDto> uploadedFiles = new ArrayList<>();
         for (MultipartFile file : files) {
-            ResourceInfoResponse uploadedFile = upload(storageKey, file);
+            ResourceInfoDto uploadedFile = upload(storageKey, file);
             uploadedFiles.add(uploadedFile);
         }
         return uploadedFiles;
     }
 
     @Transactional
-    private ResourceInfoResponse upload(StorageKey storageKey, MultipartFile file) {
+    private ResourceInfoDto upload(StorageKey storageKey, MultipartFile file) {
         storageService.putObject(storageKey, file);
         StatObjectResponse statObjectResponse = storageService.getStatObject(storageKey);
         StorageKey statObjectStorageKey = StorageKey.parsePath(statObjectResponse.object());
         fileMetadataService.save(statObjectStorageKey, statObjectResponse.size());
-        return resourceInfoMapper.toDto(statObjectStorageKey, statObjectResponse.size());
+        return resourceInfoMapper.toResourceInfoDto(statObjectStorageKey, statObjectResponse.size());
     }
 }

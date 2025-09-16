@@ -1,7 +1,7 @@
 package com.example.service.domain;
 
 import com.example.dto.DownloadResult;
-import com.example.dto.ResourceInfoResponse;
+import com.example.dto.ResourceInfoDto;
 import com.example.exception.ResourceNotFoundException;
 import com.example.exception.StorageException;
 import com.example.mapper.ResourceInfoMapper;
@@ -35,7 +35,7 @@ public class DirectoryResourceService extends AbstractResourceService implements
     }
 
     @Override
-    public ResourceInfoResponse getInfo(StorageKey storageKey) {
+    public ResourceInfoDto getInfo(StorageKey storageKey) {
         //TODO: Validate
         return super.getInfo(storageKey);
     }
@@ -77,14 +77,14 @@ public class DirectoryResourceService extends AbstractResourceService implements
     }
 
     @Override
-    public ResourceInfoResponse createEmptyFolder(StorageKey storageKey) {
+    public ResourceInfoDto createEmptyFolder(StorageKey storageKey) {
         storageService.putEmptyFolder(storageKey);
         fileMetadataService.save(storageKey);
         return getInfo(storageKey);
     }
 
     @Override
-    public List<ResourceInfoResponse> getDirectoryDetails(StorageKey storageKey) {
+    public List<ResourceInfoDto> getDirectoryDetails(StorageKey storageKey) {
         Optional<FileMetadata> fileMetadataOptional = fileMetadataService.findOne(storageKey.getKey(), storageKey.getPrefix(),
                 storageKey.getObjectName());
         if (fileMetadataOptional.isEmpty()) {
@@ -93,11 +93,11 @@ public class DirectoryResourceService extends AbstractResourceService implements
         List<FileMetadata> filesMetadata = fileMetadataService.findByKeyAndPath(storageKey.getKey(), storageKey.getPath());
         return filesMetadata.stream()
                 .filter(fileMetadata -> !fileMetadata.getName().equals(storageKey.getObjectName()))
-                .map(resourceInfoMapper::toDto).toList();
+                .map(resourceInfoMapper::toResourceInfoDto).toList();
     }
 
     @Override
-    public ResourceInfoResponse move(StorageKey sourceStorageKey, StorageKey targetStorageKey) {
+    public ResourceInfoDto move(StorageKey sourceStorageKey, StorageKey targetStorageKey) {
         //TODO: check different types
         List<String> results = storageService.getObjectsNames(sourceStorageKey, true);
         for (String oldPath : results) {

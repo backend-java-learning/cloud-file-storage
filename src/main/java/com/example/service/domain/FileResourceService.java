@@ -1,7 +1,7 @@
 package com.example.service.domain;
 
 import com.example.dto.DownloadResult;
-import com.example.dto.ResourceInfoResponse;
+import com.example.dto.ResourceInfoDto;
 import com.example.exception.StorageException;
 import com.example.mapper.ResourceInfoMapper;
 import com.example.models.StorageKey;
@@ -25,13 +25,13 @@ public class FileResourceService extends AbstractResourceService {
     }
 
     @Override
-    public ResourceInfoResponse getInfo(StorageKey storageKey) {
+    public ResourceInfoDto getInfo(StorageKey storageKey) {
         //TODO: Validation
         return super.getInfo(storageKey);
     }
 
     @Override
-    public ResourceInfoResponse move(StorageKey sourcePrefix, StorageKey targetPrefix) {
+    public ResourceInfoDto move(StorageKey sourcePrefix, StorageKey targetPrefix) {
         storageService.moveObject(sourcePrefix, targetPrefix);
         fileMetadataService.updateFileMetadata(sourcePrefix, targetPrefix);
         return getInfo(targetPrefix);

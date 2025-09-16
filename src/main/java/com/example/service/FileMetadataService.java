@@ -1,6 +1,6 @@
 package com.example.service;
 
-import com.example.dto.ResourceInfoResponse;
+import com.example.dto.ResourceInfoDto;
 import com.example.exception.ResourceNotFoundException;
 import com.example.mapper.FileMetadataMapper;
 import com.example.mapper.ResourceInfoMapper;
@@ -48,9 +48,9 @@ public class FileMetadataService {
         return fileMetadataRepository.findByKeyAndPath(key, path);
     }
 
-    public List<ResourceInfoResponse> findByKeyAndNameContaining(String key, String name) {
+    public List<ResourceInfoDto> findByKeyAndNameContaining(String key, String name) {
         return fileMetadataRepository.findByKeyAndNameContainingIgnoreCase(key, name).stream()
-                .map(resourceInfoMapper::toDto).toList();
+                .map(resourceInfoMapper::toResourceInfoDto).toList();
     }
 
     @Transactional

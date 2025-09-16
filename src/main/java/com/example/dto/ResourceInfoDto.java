@@ -5,7 +5,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Data;
 
 @Data
-public class ResourceInfoResponse {
+public class ResourceInfoDto {
     private String path;
     private String name;
     @JsonInclude(JsonInclude.Include.NON_NULL)

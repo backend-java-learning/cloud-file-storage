@@ -1,6 +1,6 @@
 package com.example.mapper;
 
-import com.example.dto.ResourceInfoResponse;
+import com.example.dto.ResourceInfoDto;
 import com.example.models.FileMetadata;
 import com.example.models.StorageKey;
 import org.mapstruct.Mapper;
@@ -14,7 +14,7 @@ public interface ResourceInfoMapper {
     @Mapping(target = "name", source = "storageKey.objectName")
     @Mapping(target = "type", source = "storageKey.resourceType")
     @Mapping(target = "size", source = "size")
-    ResourceInfoResponse toDto(StorageKey storageKey, Long size);
+    ResourceInfoDto toResourceInfoDto(StorageKey storageKey, Long size);
 
-    ResourceInfoResponse toDto(FileMetadata fileMetadata);
+    ResourceInfoDto toResourceInfoDto(FileMetadata fileMetadata);
 }

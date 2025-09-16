@@ -16,11 +16,5 @@ public interface ResourceInfoMapper {
     @Mapping(target = "size", source = "size")
     ResourceInfoResponse toDto(StorageKey storageKey, Long size);
 
-    @Mapping(target = "path", source = "storageKey.prefix")
-    @Mapping(target = "name", source = "storageKey.objectName")
-    @Mapping(target = "type", source = "storageKey.resourceType")
-    @Mapping(target = "size", ignore = true)
-    ResourceInfoResponse toDto(StorageKey storageKey);
-
     ResourceInfoResponse toDto(FileMetadata fileMetadata);
 }

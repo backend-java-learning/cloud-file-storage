@@ -3,7 +3,7 @@ package com.example.service.domain;
 import com.example.dto.ResourceInfoDto;
 import com.example.exception.ResourceNotFoundException;
 import com.example.mapper.ResourceInfoMapper;
-import com.example.models.FileMetadata;
+import com.example.models.ResourceInfo;
 import com.example.models.StorageKey;
 import com.example.service.FileMetadataService;
 import com.example.service.ResourceService;
@@ -28,7 +28,7 @@ public abstract class AbstractResourceService implements ResourceService {
 
     @Override
     public ResourceInfoDto getInfo(StorageKey storageKey) {
-        Optional<FileMetadata> fileMetadataOptional = fileMetadataService.findByStorageKey(storageKey);
+        Optional<ResourceInfo> fileMetadataOptional = fileMetadataService.findByStorageKey(storageKey);
         if (fileMetadataOptional.isEmpty()) {
             log.error("Resource [{}] doesn't exist", storageKey.buildKey());
             throw new ResourceNotFoundException("Resource [%s] doesn't exist".formatted(storageKey.getPath()));

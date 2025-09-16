@@ -9,7 +9,7 @@ import lombok.Setter;
 @Table(name = "files_metadata")
 @Setter
 @Getter
-public class FileMetadata {
+public class ResourceInfo {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

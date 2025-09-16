@@ -5,7 +5,7 @@ import com.example.dto.ResourceInfoDto;
 import com.example.exception.ResourceNotFoundException;
 import com.example.exception.StorageException;
 import com.example.mapper.ResourceInfoMapper;
-import com.example.models.FileMetadata;
+import com.example.models.ResourceInfo;
 import com.example.models.StorageKey;
 import com.example.service.DirectoryService;
 import com.example.service.FileMetadataService;
@@ -85,12 +85,12 @@ public class DirectoryResourceService extends AbstractResourceService implements
 
     @Override
     public List<ResourceInfoDto> getDirectoryDetails(StorageKey storageKey) {
-        Optional<FileMetadata> fileMetadataOptional = fileMetadataService.findOne(storageKey.getKey(), storageKey.getPrefix(),
+        Optional<ResourceInfo> fileMetadataOptional = fileMetadataService.findOne(storageKey.getKey(), storageKey.getPrefix(),
                 storageKey.getObjectName());
         if (fileMetadataOptional.isEmpty()) {
             throw new ResourceNotFoundException("Directory [%s] doesn't exist".formatted(storageKey.getPath()));
         }
-        List<FileMetadata> filesMetadata = fileMetadataService.findByKeyAndPath(storageKey.getKey(), storageKey.getPath());
+        List<ResourceInfo> filesMetadata = fileMetadataService.findByKeyAndPath(storageKey.getKey(), storageKey.getPath());
         return filesMetadata.stream()
                 .filter(fileMetadata -> !fileMetadata.getName().equals(storageKey.getObjectName()))
                 .map(resourceInfoMapper::toResourceInfoDto).toList();

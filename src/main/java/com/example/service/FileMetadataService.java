@@ -2,9 +2,8 @@ package com.example.service;
 
 import com.example.dto.ResourceInfoDto;
 import com.example.exception.ResourceNotFoundException;
-import com.example.mapper.FileMetadataMapper;
 import com.example.mapper.ResourceInfoMapper;
-import com.example.models.FileMetadata;
+import com.example.models.ResourceInfo;
 import com.example.models.StorageKey;
 import com.example.repository.FileMetadataRepository;
 import jakarta.transaction.Transactional;
@@ -20,31 +19,30 @@ import java.util.Optional;
 public class FileMetadataService {
 
     private final FileMetadataRepository fileMetadataRepository;
-    private final FileMetadataMapper fileMetadataMapper;
     private final ResourceInfoMapper resourceInfoMapper;
 
     @Transactional
     public void updateFileMetadata(StorageKey oldKey, StorageKey newKey) {
-        FileMetadata fileMetadata = fileMetadataRepository.findByKeyAndPathAndName(oldKey.getKey(), oldKey.getPrefix(),
+        ResourceInfo resourceInfo = fileMetadataRepository.findByKeyAndPathAndName(oldKey.getKey(), oldKey.getPrefix(),
                         oldKey.getObjectName())
                 .orElseThrow(() -> new ResourceNotFoundException("Object doesn't exist"));
-        fileMetadata.setKey(newKey.getKey());
-        fileMetadata.setPath(newKey.getPrefix());
-        fileMetadata.setName(newKey.getObjectName());
-        fileMetadata.setType(newKey.getResourceType());
+        resourceInfo.setKey(newKey.getKey());
+        resourceInfo.setPath(newKey.getPrefix());
+        resourceInfo.setName(newKey.getObjectName());
+        resourceInfo.setType(newKey.getResourceType());
     }
 
-    public Optional<FileMetadata> findByStorageKey(StorageKey storageKey) {
-        FileMetadata fileMetadata = fileMetadataMapper.of(storageKey);
+    public Optional<ResourceInfo> findByStorageKey(StorageKey storageKey) {
+        ResourceInfo resourceInfo = resourceInfoMapper.toResourceInfo(storageKey);
         //TODO: add validation
-        return fileMetadataRepository.findOne(Example.of(fileMetadata));
+        return fileMetadataRepository.findOne(Example.of(resourceInfo));
     }
 
-    public Optional<FileMetadata> findOne(String key, String path, String name) {
+    public Optional<ResourceInfo> findOne(String key, String path, String name) {
         return fileMetadataRepository.findByKeyAndPathAndName(key, path, name);
     }
 
-    public List<FileMetadata> findByKeyAndPath(String key, String path) {
+    public List<ResourceInfo> findByKeyAndPath(String key, String path) {
         return fileMetadataRepository.findByKeyAndPath(key, path);
     }
 
@@ -55,12 +53,12 @@ public class FileMetadataService {
 
     @Transactional
     public void save(StorageKey storageKey, Long size) {
-        fileMetadataRepository.save(fileMetadataMapper.of(storageKey, size));
+        fileMetadataRepository.save(resourceInfoMapper.toResourceInfo(storageKey, size));
     }
 
     @Transactional
     public void save(StorageKey storageKey) {
-        fileMetadataRepository.save(fileMetadataMapper.of(storageKey));
+        fileMetadataRepository.save(resourceInfoMapper.toResourceInfo(storageKey));
     }
 
     @Transactional
@@ -71,6 +69,6 @@ public class FileMetadataService {
     @Transactional
     public void deleteByStorageKey(StorageKey storageKey) {
         //TODO: validate storage key
-        fileMetadataRepository.delete(fileMetadataMapper.of(storageKey));
+        fileMetadataRepository.delete(resourceInfoMapper.toResourceInfo(storageKey));
     }
 }

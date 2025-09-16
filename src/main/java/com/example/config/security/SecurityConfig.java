@@ -13,6 +13,8 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
+import org.springframework.security.web.context.SecurityContextRepository;
 
 @Configuration
 @EnableWebSecurity
@@ -37,7 +39,10 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 )
                 .csrf(AbstractHttpConfigurer::disable)
+                .formLogin(AbstractHttpConfigurer::disable)
                 .userDetailsService(userDetailsService)
+                .sessionManagement(httpSecuritySessionManagementConfigurer ->
+                        httpSecuritySessionManagementConfigurer.maximumSessions(1).maxSessionsPreventsLogin(false))
                 .exceptionHandling(
                         httpSecurityExceptionHandlingConfigurer ->
                                 httpSecurityExceptionHandlingConfigurer
@@ -47,7 +52,6 @@ public class SecurityConfig {
                                             response.sendError(HttpServletResponse.SC_FORBIDDEN, "Forbidden");
                                         })
                 );
-        ;
         return http.build();
     }
 
@@ -60,5 +64,11 @@ public class SecurityConfig {
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();
     }
+
+    @Bean
+    public SecurityContextRepository securityContextRepository() {
+        return new HttpSessionSecurityContextRepository();
+    }
+
 }
 

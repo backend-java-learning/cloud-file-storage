@@ -6,12 +6,15 @@ import com.example.exception.InvalidCredentialsException;
 import com.example.mapper.UserMapper;
 import com.example.models.User;
 import com.example.repository.UserRepository;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.AllArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
@@ -21,16 +24,20 @@ import java.util.Optional;
 public class AuthorizationService {
 
     private AuthenticationManager authenticationManager;
+    private SecurityContextRepository securityContextRepository;
     private UserMapper userMapper;
     private UserRepository userRepository;
 
-    public AuthorizedUserResponse authenticate(AuthorizeUserRequest authorizeUserRequest) {
+    public AuthorizedUserResponse authenticate(AuthorizeUserRequest authorizeUserRequest,
+                                               HttpServletRequest request,
+                                               HttpServletResponse response) {
         UsernamePasswordAuthenticationToken authToken =
                 new UsernamePasswordAuthenticationToken(authorizeUserRequest.getUsername(), authorizeUserRequest.getPassword());
         Authentication authentication = authenticationManager.authenticate(authToken);
         SecurityContext context = SecurityContextHolder.createEmptyContext();
         context.setAuthentication(authentication);
         SecurityContextHolder.setContext(context);
+        securityContextRepository.saveContext(context, request, response);
         Optional<User> userOptional = userRepository.findByLogin(authorizeUserRequest.getUsername());
         if (userOptional.isEmpty()) {
             throw new InvalidCredentialsException("Неверный пользователь");

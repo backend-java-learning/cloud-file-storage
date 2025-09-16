@@ -1,4 +1,4 @@
-package com.example.service.domain;
+package com.example.service.storage;
 
 import com.example.dto.ResourceInfoDto;
 import com.example.exception.ResourceNotFoundException;

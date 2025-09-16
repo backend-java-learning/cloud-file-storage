@@ -1,5 +1,6 @@
-package com.example.config.security;
+package com.example.config;
 
+import com.example.service.UserDetailsServiceImpl;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;

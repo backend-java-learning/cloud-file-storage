@@ -1,8 +1,8 @@
 package com.example.factory;
 
 import com.example.dto.enums.ResourceType;
-import com.example.service.domain.DirectoryResourceService;
-import com.example.service.domain.FileResourceService;
+import com.example.service.storage.DirectoryResourceService;
+import com.example.service.storage.FileResourceService;
 import com.example.service.ResourceService;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Component;

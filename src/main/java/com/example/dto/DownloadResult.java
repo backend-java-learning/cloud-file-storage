@@ -1,6 +1,6 @@
 package com.example.dto;
 
-import org.springframework.core.io.Resource;
+import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
-public record DownloadResult(String fileName, Resource resource, long size, String contentType) {
+public record DownloadResult(String fileName, StreamingResponseBody out, String contentType) {
 }

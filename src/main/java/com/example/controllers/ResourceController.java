@@ -9,7 +9,6 @@ import com.example.models.User;
 import com.example.service.FileMetadataService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -17,6 +16,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 import java.util.List;
 
@@ -60,17 +60,17 @@ public class ResourceController {
     }
 
     @GetMapping("/resource/download")
-    private ResponseEntity<Resource> downloadResource(@AuthenticationPrincipal User user,
-                                                      @RequestParam String path) {
+    private ResponseEntity<StreamingResponseBody> downloadResource(@AuthenticationPrincipal User user,
+                                                                   @RequestParam String path) {
         log.info("Received request to download resource [{}]", path);
         StorageKey storageKey = StorageKey.parsePath(user.getId(), path);
         DownloadResult result = resourceServiceFactory
                 .create(storageKey.getResourceType())
-                .download(storageKey);
+                .downloadStream(storageKey);
         return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + result.fileName() + "\"")
-                .body(result.resource());
+                .body(result.out());
     }
 
     @GetMapping(value = "/resource/move")

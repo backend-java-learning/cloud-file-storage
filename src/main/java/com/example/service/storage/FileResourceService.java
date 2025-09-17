@@ -13,6 +13,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
+import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
+
+import java.io.InputStream;
+import java.io.OutputStream;
 
 @Slf4j
 @Service
@@ -38,25 +42,18 @@ public class FileResourceService extends AbstractResourceService {
     }
 
     @Override
-    public void remove(StorageKey storageKey) {
-        storageService.removeObject(storageKey);
-        fileMetadataService.deleteByStorageKey(storageKey);
+    public DownloadResult downloadStream(StorageKey storageKey) {
+        StreamingResponseBody body = out -> {
+            try (InputStream is = storageService.getObject(storageKey)) {
+                is.transferTo(out);
+            }
+        };
+        return new DownloadResult(storageKey.getPath(), body,"application/octet-stream");
     }
 
     @Override
-    public DownloadResult download(StorageKey storageKey) {
-        try {
-            GetObjectResponse stream = storageService.getObject(storageKey);
-            Resource resource = new InputStreamResource(stream);
-            StatObjectResponse stat = storageService.getStatObject(storageKey);
-            return new DownloadResult(
-                    storageKey.getPath(),
-                    resource,
-                    stat.size(),
-                    stat.contentType() != null ? stat.contentType() : "application/octet-stream"
-            );
-        } catch (Exception e) {
-            throw new StorageException("Failed to download object: " + storageKey.buildKey(), e);
-        }
+    public void remove(StorageKey storageKey) {
+        storageService.removeObject(storageKey);
+        fileMetadataService.deleteByStorageKey(storageKey);
     }
 }

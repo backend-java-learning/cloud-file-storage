@@ -147,10 +147,10 @@ public class StorageService {
         }
     }
 
-    public List<Result<Item>> getListObjects(StorageKey storageKey, boolean isRecursive) {
-        Iterable<Result<Item>> results = listObjects(storageKey.buildKey(), isRecursive);
-        return StreamSupport.stream(results.spliterator(), false).toList();
-    }
+//    public List<Result<Item>> getListObjects(StorageKey storageKey, boolean isRecursive) {
+//        Iterable<Result<Item>> results = listObjects(storageKey.buildKey(), isRecursive);
+//        return StreamSupport.stream(results.spliterator(), false).toList();
+//    }
 
     private ObjectWriteResponse putObject(StorageKey storageKey, InputStreamSource inputStreamSource, long objectSize, String contentType) {
         try (InputStream is = inputStreamSource.getInputStream()) {

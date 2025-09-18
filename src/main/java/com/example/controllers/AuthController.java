@@ -7,6 +7,7 @@ import com.example.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
+import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -24,7 +25,7 @@ public class AuthController {
     private AuthorizationService authorizationService;
 
     @PostMapping("/sign-up")
-    public ResponseEntity<AuthorizedUserResponse> signUp(@RequestBody AuthorizeUserRequest authorizeUserRequest) {
+    public ResponseEntity<AuthorizedUserResponse> signUp(@Valid @RequestBody AuthorizeUserRequest authorizeUserRequest) {
         log.info("Received sign up request: {}", authorizeUserRequest.getUsername());
         AuthorizedUserResponse createdUser = userService.registerUser(authorizeUserRequest);
         return ResponseEntity.status(HttpStatus.CREATED).body(createdUser);

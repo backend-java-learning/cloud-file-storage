@@ -1,10 +1,12 @@
 package com.example.exception;
 
 import com.example.dto.ErrorResponse;
+import com.example.exception.resource.ResourceNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
@@ -37,6 +39,11 @@ public class GlobalExceptionHandler {
         return setMessage(ResponseEntity.badRequest(), invalidPathException);
     }
 
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ErrorResponse> handleStorageException(MethodArgumentNotValidException methodArgumentNotValidException) {
+        return setMessage(ResponseEntity.badRequest(), methodArgumentNotValidException.getMessage());
+    }
+
     @ExceptionHandler(StorageException.class)
     public ResponseEntity<ErrorResponse> handleStorageException(StorageException storageException) {
         return setMessage(ResponseEntity.internalServerError(), "Something went wrong with storage");
@@ -44,7 +51,6 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleRuntimeException(Exception runtimeException) {
-        //TODO: add loger
         log.error("Exception appeared", runtimeException);
         return setMessage(ResponseEntity.internalServerError(), "Something went wrong");
     }

@@ -1,7 +1,7 @@
 package com.example.service;
 
 import com.example.dto.ResourceInfoDto;
-import com.example.exception.ResourceNotFoundException;
+import com.example.exception.resource.ResourceNotFoundException;
 import com.example.mapper.ResourceInfoMapper;
 import com.example.models.ResourceInfo;
 import com.example.models.StorageKey;
@@ -40,6 +40,14 @@ public class FileMetadataService {
 
     public Optional<ResourceInfo> findOne(String key, String path, String name) {
         return fileMetadataRepository.findByKeyAndPathAndName(key, path, name);
+    }
+
+    public boolean isFilePresented(StorageKey storageKey) {
+        return findOne(storageKey.getKey(), storageKey.getPath(), storageKey.getObjectName()).isPresent();
+    }
+
+    public boolean isFilePresented(String key, String path, String name) {
+        return findOne(key, path, name).isPresent();
     }
 
     public List<ResourceInfo> findByKeyAndPath(String key, String path) {

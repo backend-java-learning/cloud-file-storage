@@ -3,6 +3,7 @@ package com.example.controllers;
 import com.example.dto.DownloadResult;
 import com.example.dto.ResourceInfoDto;
 import com.example.exception.InvalidPathException;
+import com.example.exception.resource.ResourceTypeException;
 import com.example.factory.ResourceServiceFactory;
 import com.example.models.StorageKey;
 import com.example.models.User;
@@ -80,9 +81,8 @@ public class ResourceController {
         log.info("Received request to move resource from [{}] to [{}]", from, to);
         StorageKey sourceStorageKey = StorageKey.parsePath(user.getId(), from);
         StorageKey targetStorageKey = StorageKey.parsePath(user.getId(), to);
-        //TODO: add exception
         if (sourceStorageKey.getResourceType() != targetStorageKey.getResourceType()) {
-            // throw
+            throw new ResourceTypeException("Source and target key must have the same resource type [FILE | DIRECTORY]");
         }
         ResourceInfoDto resourceInfo = resourceServiceFactory
                 .create(sourceStorageKey.getResourceType())

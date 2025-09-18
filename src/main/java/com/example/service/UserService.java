@@ -7,6 +7,7 @@ import com.example.mapper.UserMapper;
 import com.example.models.StorageKey;
 import com.example.models.User;
 import com.example.repository.UserRepository;
+import com.example.service.minio.StorageService;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

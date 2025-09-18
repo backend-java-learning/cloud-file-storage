@@ -2,22 +2,22 @@ package com.example.service.storage;
 
 import com.example.dto.DownloadResult;
 import com.example.dto.ResourceInfoDto;
-import com.example.exception.ResourceNotFoundException;
+import com.example.dto.enums.ResourceType;
+import com.example.exception.resource.ResourceException;
+import com.example.exception.resource.ResourceNotFoundException;
+import com.example.exception.resource.ResourceTypeException;
 import com.example.mapper.ResourceInfoMapper;
 import com.example.models.ResourceInfo;
 import com.example.models.StorageKey;
 import com.example.service.DirectoryService;
 import com.example.service.FileMetadataService;
-import com.example.service.StorageService;
+import com.example.service.minio.StorageService;
 import com.example.utils.ZipCreator;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.io.*;
-import java.nio.file.Paths;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -36,28 +36,29 @@ public class DirectoryResourceService extends AbstractResourceService implements
 
     @Override
     public ResourceInfoDto getInfo(StorageKey storageKey) {
-        //TODO: Validate
+        validateDirectory(storageKey);
         return super.getInfo(storageKey);
     }
 
     @Override
     public void remove(StorageKey storageKey) {
+        validateDirectory(storageKey);
         storageService.removeObjects(storageKey);
         fileMetadataService.deleteByPath(storageKey.getKey(), storageKey.getPrefix());
     }
 
     @Override
     public DownloadResult downloadStream(StorageKey storageKey) {
+        validateDirectory(storageKey);
         List<ZipCreator.FileEntry> files = storageService.getObjectsNames(storageKey, true).stream()
                 .map(objectName -> {
-                    InputStream is = storageService.getObject(objectName);
                     String base = storageKey.buildKey();
                     String entryName = objectName.substring(base.length());
-                    return new ZipCreator.FileEntry(entryName, is);
+                    return new ZipCreator.FileEntry(entryName, () -> storageService.getObject(objectName));
                 })
                 .collect(Collectors.toList());
         return new DownloadResult(
-                Paths.get(storageKey.buildKey()).getFileName().toString() + ".zip",
+                storageKey.getObjectName().replace("/", "") + ".zip",
                 zipCreator.createZip(files),
                 "application/zip"
         );
@@ -65,6 +66,10 @@ public class DirectoryResourceService extends AbstractResourceService implements
 
     @Override
     public ResourceInfoDto createEmptyFolder(StorageKey storageKey) {
+        validateDirectory(storageKey);
+        if (fileMetadataService.isFilePresented(storageKey)) {
+            throw new ResourceException("Move file exception: the file [%s] already exist".formatted(storageKey.getPath()));
+        }
         storageService.putEmptyFolder(storageKey);
         fileMetadataService.save(storageKey);
         return getInfo(storageKey);
@@ -72,11 +77,9 @@ public class DirectoryResourceService extends AbstractResourceService implements
 
     @Override
     public List<ResourceInfoDto> getDirectoryDetails(StorageKey storageKey) {
-        Optional<ResourceInfo> fileMetadataOptional = fileMetadataService.findOne(storageKey.getKey(), storageKey.getPrefix(),
-                storageKey.getObjectName());
-        if (fileMetadataOptional.isEmpty()) {
-            throw new ResourceNotFoundException("Directory [%s] doesn't exist".formatted(storageKey.getPath()));
-        }
+        validateDirectory(storageKey);
+        fileMetadataService.findOne(storageKey.getKey(), storageKey.getPrefix(), storageKey.getObjectName())
+                .orElseThrow(() -> new ResourceNotFoundException("Directory [%s] doesn't exist".formatted(storageKey.getPath())));
         List<ResourceInfo> filesMetadata = fileMetadataService.findByKeyAndPath(storageKey.getKey(), storageKey.getPath());
         return filesMetadata.stream()
                 .filter(fileMetadata -> !fileMetadata.getName().equals(storageKey.getObjectName()))
@@ -85,7 +88,13 @@ public class DirectoryResourceService extends AbstractResourceService implements
 
     @Override
     public ResourceInfoDto move(StorageKey sourceStorageKey, StorageKey targetStorageKey) {
-        //TODO: check different types
+        if (sourceStorageKey.getResourceType() != targetStorageKey.getResourceType()) {
+            throw new ResourceTypeException("Source and target key must have the same resource type [FILE | DIRECTORY]");
+        }
+        validateDirectory(sourceStorageKey);
+        if (fileMetadataService.isFilePresented(targetStorageKey)) {
+            throw new ResourceException("Move file exception: the file [%s] already exist".formatted(targetStorageKey.getPath()));
+        }
         storageService.getObjectsNames(sourceStorageKey, true)
                 .forEach(oldPath -> moveObject(oldPath, sourceStorageKey, targetStorageKey));
         return getInfo(targetStorageKey);
@@ -98,5 +107,9 @@ public class DirectoryResourceService extends AbstractResourceService implements
         StorageKey newStorageKey = StorageKey.parsePath(newPath);
         fileMetadataService.updateFileMetadata(oldStorageKey, newStorageKey);
         storageService.moveObject(oldStorageKey, newStorageKey);
+    }
+
+    private void validateDirectory(StorageKey storageKey) {
+        validateResource(storageKey, ResourceType.DIRECTORY);
     }
 }

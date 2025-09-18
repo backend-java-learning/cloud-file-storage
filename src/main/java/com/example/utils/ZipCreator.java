@@ -4,6 +4,7 @@ import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBo
 
 import java.io.InputStream;
 import java.util.List;
+import java.util.function.Supplier;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -13,7 +14,7 @@ public class ZipCreator {
         return outputStream -> {
             try (ZipOutputStream zos = new ZipOutputStream(outputStream)) {
                 for (FileEntry entry : files) {
-                    try (InputStream is = entry.getInputStream()) {
+                    try (InputStream is = entry.getInputStream().get()) {
                         zos.putNextEntry(new ZipEntry(entry.getEntryName()));
                         is.transferTo(zos);
                         zos.closeEntry();
@@ -25,14 +26,14 @@ public class ZipCreator {
 
     public static class FileEntry {
         private final String entryName;
-        private final InputStream inputStream;
+        private final Supplier<InputStream> inputStream;
 
-        public FileEntry(String entryName, InputStream inputStream) {
+        public FileEntry(String entryName, Supplier<InputStream> inputStream) {
             this.entryName = entryName;
             this.inputStream = inputStream;
         }
 
         public String getEntryName() { return entryName; }
-        public InputStream getInputStream() { return inputStream; }
+        public Supplier<InputStream> getInputStream() { return inputStream; }
     }
 }

@@ -1,8 +1,11 @@
 package com.example.service.minio;
 
+import com.example.dto.ResourceInfoDto;
+import com.example.dto.enums.ResourceType;
 import com.example.exception.resource.DeleteResourceException;
 import com.example.exception.resource.ResourceNotFoundException;
 import com.example.exception.StorageException;
+import com.example.mapper.ResourceInfoMapper;
 import com.example.models.StorageKey;
 import io.minio.*;
 import io.minio.errors.*;
@@ -31,6 +34,7 @@ public class StorageService {
     private String bucket;
     private final MinioClient minioClient;
     private final MinioArgsFactory minioArgsFactory;
+    private final ResourceInfoMapper resourceInfoMapper;
 
     public void putObject(StorageKey storageKey, MultipartFile file) {
         putObject(storageKey, file, file.getSize(), file.getContentType());
@@ -43,6 +47,10 @@ public class StorageService {
 
     public void removeObjects(int userId) {
         removeObjects(StorageKey.createEmptyDirectoryKey(userId));
+    }
+
+    public boolean doesObjectExist(StorageKey storageKey) {
+        return listObjects(storageKey.buildKey(), false).iterator().hasNext();
     }
 
     public void removeObjects(StorageKey storageKey) {
@@ -105,12 +113,32 @@ public class StorageService {
                 }).toList();
     }
 
+    public List<ResourceInfoDto> getObjectsInfo(StorageKey storageKey, boolean isRecursive) {
+        return StreamSupport.stream(listObjects(storageKey.buildKey(), isRecursive).spliterator(), false)
+                .map(result -> {
+                    try {
+                        Item item = result.get();
+                        String objectName = item.objectName();
+                        StorageKey storageKeyInfo = StorageKey.parsePath(objectName);
+                        return storageKeyInfo.getResourceType().equals(ResourceType.FILE)
+                                ? resourceInfoMapper.toResourceInfoDto(storageKeyInfo, item.size())
+                                : resourceInfoMapper.toResourceInfoDto(storageKeyInfo);
+                    } catch (Exception ex) {
+                        throw new StorageException("Unexpected issue");
+                    }
+                }).toList();
+    }
+
     public void moveObject(StorageKey sourceStorageKey, StorageKey targetStorageKey) {
         copyObject(targetStorageKey, sourceStorageKey);
         removeObject(sourceStorageKey);
     }
 
-    private Iterable<Result<Item>> listObjects(String prefix, boolean isRecursive) {
+    public Iterable<Result<Item>> listObjects(StorageKey storageKey, boolean isRecursive) {
+        return listObjects(storageKey.buildKey(), isRecursive);
+    }
+
+    public Iterable<Result<Item>> listObjects(String prefix, boolean isRecursive) {
         return minioClient.listObjects(minioArgsFactory.listObjectsArgs(prefix, isRecursive));
     }
 

@@ -16,6 +16,12 @@ public interface ResourceInfoMapper {
     @Mapping(target = "size", source = "size")
     ResourceInfoDto toResourceInfoDto(StorageKey storageKey, Long size);
 
+    @Mapping(target = "path", source = "storageKey.prefix")
+    @Mapping(target = "name", source = "storageKey.objectName")
+    @Mapping(target = "type", source = "storageKey.resourceType")
+    @Mapping(target = "size", ignore = true)
+    ResourceInfoDto toResourceInfoDto(StorageKey storageKey);
+
     ResourceInfoDto toResourceInfoDto(ResourceInfo resourceInfo);
 
     @Mapping(target = "path", source = "storageKey.prefix")

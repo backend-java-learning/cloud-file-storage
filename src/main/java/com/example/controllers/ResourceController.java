@@ -31,8 +31,7 @@ public class ResourceController {
             throw new InvalidPathException("Resource path can't be empty");
         }
         StorageKey storageKey = StorageKey.parsePath(user.getId(), path);
-        ResourceInfoDto resourceInfo = resourceServiceFactory.create(storageKey.getResourceType())
-                .getInfo(storageKey);
+        ResourceInfoDto resourceInfo = resourceServiceFactory.create(storageKey.getResourceType()).getInfo(storageKey);
         return ResponseEntity.ok(resourceInfo);
     }
 
@@ -41,7 +40,7 @@ public class ResourceController {
                                                             @RequestParam String path,
                                                             @RequestParam List<MultipartFile> object) {
         log.info("Received request to upload files [{}] by path [{}]", String.join(" | ", object.stream().map(MultipartFile::getOriginalFilename).toList()), path);
-        if (!path.endsWith("/") && !path.isEmpty()) {
+        if (!path.isEmpty() && !path.endsWith("/")) {
             throw new InvalidPathException("The path for folder have to end with '/'");
         }
         //TODO: check what happens here

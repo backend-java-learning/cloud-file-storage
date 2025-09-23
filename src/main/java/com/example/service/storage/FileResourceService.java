@@ -7,8 +7,8 @@ import com.example.exception.resource.ResourceException;
 import com.example.exception.resource.ResourceTypeException;
 import com.example.mapper.ResourceInfoMapper;
 import com.example.models.StorageKey;
-import com.example.service.FileMetadataService;
 import com.example.service.minio.StorageService;
+import io.minio.StatObjectResponse;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -21,15 +21,15 @@ import java.io.InputStream;
 public class FileResourceService extends AbstractResourceService {
 
     public FileResourceService(StorageService storageService,
-                               FileMetadataService fileMetadataService,
                                ResourceInfoMapper resourceInfoMapper) {
-        super(storageService, fileMetadataService, resourceInfoMapper);
+        super(storageService, resourceInfoMapper);
     }
 
     @Override
     public ResourceInfoDto getInfo(StorageKey storageKey) {
-        validateFile(storageKey);
-        return super.getInfo(storageKey);
+        StatObjectResponse statObjectResponse = storageService.getStatObject(storageKey);
+        StorageKey statObjectStorageKey = StorageKey.parsePath(statObjectResponse.object());
+        return resourceInfoMapper.toResourceInfoDto(statObjectStorageKey, statObjectResponse.size());
     }
 
     @Transactional(rollbackOn = Exception.class)
@@ -39,11 +39,10 @@ public class FileResourceService extends AbstractResourceService {
             throw new ResourceTypeException("Source and target key must have the same resource type [FILE | DIRECTORY]");
         }
         validateFile(sourcePrefix);
-        if (fileMetadataService.isFilePresented(targetPrefix)) {
+        if (storageService.doesObjectExist(targetPrefix)) {
             throw new ResourceException("Move file exception: the file [%s] already exist".formatted(targetPrefix.getPath()));
         }
         storageService.moveObject(sourcePrefix, targetPrefix);
-        fileMetadataService.updateFileMetadata(sourcePrefix, targetPrefix);
         return getInfo(targetPrefix);
     }
 
@@ -62,7 +61,6 @@ public class FileResourceService extends AbstractResourceService {
     public void remove(StorageKey storageKey) {
         validateFile(storageKey);
         storageService.removeObject(storageKey);
-        fileMetadataService.deleteByStorageKey(storageKey);
     }
 
     private void validateFile(StorageKey storageKey) {

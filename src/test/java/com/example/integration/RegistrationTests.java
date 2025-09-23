@@ -1,6 +1,7 @@
 package com.example.integration;
 
 import com.example.dto.AuthorizeUserRequest;
+import com.example.models.StorageKey;
 import com.example.models.User;
 import com.example.repository.UserRepository;
 import com.example.service.minio.StorageService;
@@ -56,8 +57,8 @@ public class RegistrationTests {
 
         Optional<User> createdUser = userRepository.findByLogin(authorizeUserRequest.getUsername());
         assertTrue(createdUser.isPresent());
-        //TODO: check minio
-       // assertFalse(fileMetadataRepository.findByKeyAndPath(StorageKey.getKey(createdUser.get().getId()), "").isEmpty());
+        boolean doesUserFolderExist = storageService.doesObjectExist(StorageKey.createEmptyDirectoryKey(createdUser.get().getId()));
+        assertTrue(doesUserFolderExist);
         createdUserIds.add(createdUser.get().getId());
     }
 
@@ -75,8 +76,8 @@ public class RegistrationTests {
 
         Optional<User> createdUser = userRepository.findByLogin(authorizeUserRequest.getUsername());
         assertTrue(createdUser.isPresent());
-        //TODO: check minio
-       // assertFalse(fileMetadataRepository.findByKeyAndPath(StorageKey.getKey(createdUser.get().getId()), "").isEmpty());
+        boolean doesUserFolderExist = storageService.doesObjectExist(StorageKey.createEmptyDirectoryKey(createdUser.get().getId()));
+        assertTrue(doesUserFolderExist);
 
         mockMvc.perform(post("/api/auth/sign-up")
                         .contentType(MediaType.APPLICATION_JSON)

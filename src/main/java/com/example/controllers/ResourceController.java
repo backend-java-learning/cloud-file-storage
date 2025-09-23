@@ -13,6 +13,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.Arrays;
 import java.util.List;
 
 @RestController
@@ -43,8 +44,7 @@ public class ResourceController {
         if (!path.isEmpty() && !path.endsWith("/")) {
             throw new InvalidPathException("The path for folder have to end with '/'");
         }
-        //TODO: check what happens here
-        StorageKey storageKey = StorageKey.parsePath(user.getId(), path + object.getFirst().getResource().getFilename());
+        StorageKey storageKey = StorageKey.parsePath(user.getId(), path);
         List<ResourceInfoDto> resourceInfo = resourceServiceFactory.create(storageKey.getResourceType())
                 .upload(storageKey, object);
         return ResponseEntity.ok(resourceInfo);

@@ -43,7 +43,7 @@ public class StorageKey {
         return key + path;
     }
 
-    private static StorageKey parse(String key, String path) {
+    public static StorageKey parse(String key, String path) {
         List<String> parts = new ArrayList<>(Arrays.asList(path.split("/")));
         return parse(key, parts, path.endsWith("/"));
     }
@@ -73,10 +73,6 @@ public class StorageKey {
 
     public static StorageKey createEmptyDirectoryKey(int userId) {
         return new StorageKey(userId, "", "");
-    }
-
-    public static String getKey(int userId) {
-        return KEY_PATTERN.formatted(userId);
     }
 }
 

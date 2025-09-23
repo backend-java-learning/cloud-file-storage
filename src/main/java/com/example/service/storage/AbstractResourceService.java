@@ -16,6 +16,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -36,13 +37,12 @@ public abstract class AbstractResourceService implements ResourceService {
 
     @Transactional
     private ResourceInfoDto upload(StorageKey storageKey, MultipartFile file) {
-        if (storageService.doesObjectExist(storageKey)) {
-            //FIXME: fix checking
-            //    if (fileMetadataService.isFilePresented(storageKey.getKey(), storageKey.getPath(), file.getName())) {
-            throw new ResourceException("Couldn't upload file, because file with path [%s] and name [%s] already exist".formatted(storageKey.getPath(), file.getName()));
+        StorageKey newFile = StorageKey.parse(storageKey.getKey(), Objects.requireNonNull(file.getOriginalFilename()));
+        if (storageService.doesObjectExist(newFile)) {
+            throw new ResourceException("Couldn't upload file, because file with path [%s] and name [%s] already exist".formatted(newFile.getPath(), newFile.getObjectName()));
         }
-        storageService.putObject(storageKey, file);
-        StatObjectResponse statObjectResponse = storageService.getStatObject(storageKey);
+        storageService.putObject(newFile, file);
+        StatObjectResponse statObjectResponse = storageService.getStatObject(newFile);
         StorageKey statObjectStorageKey = StorageKey.parsePath(statObjectResponse.object());
         return resourceInfoMapper.toResourceInfoDto(statObjectStorageKey, statObjectResponse.size());
     }

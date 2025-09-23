@@ -10,19 +10,45 @@ import java.util.zip.ZipOutputStream;
 
 public class ZipCreator {
 
+//    public StreamingResponseBody createZip(List<FileEntry> files) {
+//        return outputStream -> {
+//            try (ZipOutputStream zos = new ZipOutputStream(outputStream)) {
+//                for (FileEntry entry : files) {
+//                    try (InputStream is = entry.getInputStream().get()) {
+//                        zos.putNextEntry(new ZipEntry(entry.getEntryName()));
+//                        is.transferTo(zos);
+//                        zos.closeEntry();
+//                    }
+//                }
+//            }
+//        };
+//    }
+
     public StreamingResponseBody createZip(List<FileEntry> files) {
         return outputStream -> {
             try (ZipOutputStream zos = new ZipOutputStream(outputStream)) {
                 for (FileEntry entry : files) {
-                    try (InputStream is = entry.getInputStream().get()) {
-                        zos.putNextEntry(new ZipEntry(entry.getEntryName()));
-                        is.transferTo(zos);
+                    String entryName = entry.getEntryName();
+                    if (entryName == null || entryName.isEmpty()) continue;
+
+                    // Если это папка (заканчивается на "/") — добавляем пустой ZipEntry
+                    if (entryName.endsWith("/")) {
+                        zos.putNextEntry(new ZipEntry(entryName));
                         zos.closeEntry();
+                        continue;
                     }
+
+                    // Обычный файл
+                    zos.putNextEntry(new ZipEntry(entryName));
+                    try (InputStream is = entry.getInputStream().get()) {
+                        is.transferTo(zos);
+                    }
+                    zos.closeEntry();
                 }
             }
         };
     }
+
 
     public static class FileEntry {
         private final String entryName;

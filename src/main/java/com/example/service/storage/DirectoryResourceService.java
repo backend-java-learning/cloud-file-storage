@@ -120,7 +120,6 @@ public class DirectoryResourceService extends AbstractResourceService implements
         return getInfo(targetStorageKey);
     }
 
-    @Transactional(rollbackOn = Exception.class)
     private void moveObject(String oldPath, StorageKey sourceStorageKey, StorageKey targetStorageKey) {
         String newPath = oldPath.replace(sourceStorageKey.buildKey(), targetStorageKey.buildKey());
         StorageKey oldStorageKey = StorageKey.parsePath(oldPath);

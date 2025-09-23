@@ -23,7 +23,7 @@ public class SearchService {
     public List<ResourceInfoDto> search(StorageKey storageKey, String query) {
         String queryForMinio = storageKey.buildKey() + query;
 
-       return StreamSupport.stream(storageService.listObjects(queryForMinio, false).spliterator(), false)
+        var a = StreamSupport.stream(storageService.listObjects(storageKey, true).spliterator(), false)
                 .map(result -> {
                     try {
                         Item item = result.get();
@@ -37,5 +37,37 @@ public class SearchService {
                     }
                 })
                 .toList();
+        var b =1;
+
+       return StreamSupport.stream(storageService.listObjects(storageKey, true).spliterator(), false)
+               .map(result -> {
+                   try {
+                       Item item = result.get();
+                       String objectName = item.objectName();
+                       StorageKey storageKeyInfo = StorageKey.parsePath(objectName);
+                       return storageKeyInfo.getResourceType().equals(ResourceType.FILE)
+                               ? resourceInfoMapper.toResourceInfoDto(storageKeyInfo, item.size())
+                               : resourceInfoMapper.toResourceInfoDto(storageKeyInfo);
+                   } catch (Exception ex) {
+                       throw new StorageException("Unexpected issue");
+                   }
+               })
+               .filter(resourceInfoDto -> resourceInfoDto.getName().toLowerCase().contains(query.toLowerCase()))
+               .toList();
+//               StreamSupport.stream(storageService.listObjects(queryForMinio, false).spliterator(), false)
+//                .map(result -> {
+//                    try {
+//                        Item item = result.get();
+//                        String objectName = item.objectName();
+//                        StorageKey storageKeyInfo = StorageKey.parsePath(objectName);
+//                        return storageKeyInfo.getResourceType().equals(ResourceType.FILE)
+//                                ? resourceInfoMapper.toResourceInfoDto(storageKeyInfo, item.size())
+//                                : resourceInfoMapper.toResourceInfoDto(storageKeyInfo);
+//                    } catch (Exception ex) {
+//                        throw new StorageException("Unexpected issue");
+//                    }
+//                })
+//               .filter(resourceInfoDto -> resourceInfoDto.getName().toLowerCase().contains(query.toLowerCase()))
+//                .toList();
     }
 }

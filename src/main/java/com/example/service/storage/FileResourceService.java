@@ -33,7 +33,6 @@ public class FileResourceService extends AbstractResourceService {
         return resourceInfoMapper.toResourceInfoDto(statObjectStorageKey, statObjectResponse.size());
     }
 
-    @Transactional(rollbackOn = Exception.class)
     @Override
     public ResourceInfoDto move(StorageKey sourcePrefix, StorageKey targetPrefix) {
         if (sourcePrefix.getResourceType() != targetPrefix.getResourceType()) {

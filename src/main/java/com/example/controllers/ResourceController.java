@@ -47,7 +47,7 @@ public class ResourceController {
         StorageKey storageKey = StorageKey.parsePath(user.getId(), path);
         List<ResourceInfoDto> resourceInfo = resourceServiceFactory.create(storageKey.getResourceType())
                 .upload(storageKey, object);
-        return ResponseEntity.ok(resourceInfo);
+        return ResponseEntity.status(HttpStatus.CREATED).body(resourceInfo);
     }
 
     @DeleteMapping(value = "/resource")

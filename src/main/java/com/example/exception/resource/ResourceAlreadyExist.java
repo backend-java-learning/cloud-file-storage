@@ -2,8 +2,8 @@ package com.example.exception.resource;
 
 import com.example.exception.StorageException;
 
-public class ResourceException extends StorageException {
-    public ResourceException(String message) {
+public class ResourceAlreadyExist extends StorageException {
+    public ResourceAlreadyExist(String message) {
         super(message);
     }
 }

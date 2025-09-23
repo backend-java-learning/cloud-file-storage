@@ -1,6 +1,7 @@
 package com.example.exception;
 
 import com.example.dto.ErrorResponse;
+import com.example.exception.resource.ResourceAlreadyExist;
 import com.example.exception.resource.ResourceNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -34,6 +35,11 @@ public class GlobalExceptionHandler {
         return setMessage(ResponseEntity.status(HttpStatus.NOT_FOUND), resourceNotFoundException);
     }
 
+    @ExceptionHandler(ResourceAlreadyExist.class)
+    public ResponseEntity<ErrorResponse> handleResourceAlreadyExist(ResourceAlreadyExist resourceAlreadyExist) {
+        return setMessage(ResponseEntity.status(HttpStatus.CONFLICT), resourceAlreadyExist);
+    }
+
     @ExceptionHandler(InvalidPathException.class)
     public ResponseEntity<ErrorResponse> handleInvalidPath(InvalidPathException invalidPathException) {
         return setMessage(ResponseEntity.badRequest(), invalidPathException);
@@ -46,7 +52,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(StorageException.class)
     public ResponseEntity<ErrorResponse> handleStorageException(StorageException storageException) {
-        return setMessage(ResponseEntity.internalServerError(), "Something went wrong with storage");
+        return setMessage(ResponseEntity.internalServerError(), storageException);
     }
 
     @ExceptionHandler(Exception.class)

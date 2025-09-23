@@ -43,7 +43,7 @@ public class StorageKey {
         return key + path;
     }
 
-    public static StorageKey parse(String key, String path) {
+    private static StorageKey parse(String key, String path) {
         List<String> parts = new ArrayList<>(Arrays.asList(path.split("/")));
         return parse(key, parts, path.endsWith("/"));
     }

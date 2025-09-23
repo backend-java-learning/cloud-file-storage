@@ -37,7 +37,8 @@ public abstract class AbstractResourceService implements ResourceService {
 
     @Transactional
     private ResourceInfoDto upload(StorageKey storageKey, MultipartFile file) {
-        StorageKey newFile = StorageKey.parse(storageKey.getKey(), Objects.requireNonNull(file.getOriginalFilename()));
+        String newPath = storageKey.buildKey() + file.getOriginalFilename();
+        StorageKey newFile = StorageKey.parsePath(newPath);
         if (storageService.doesObjectExist(newFile)) {
             throw new ResourceException("Couldn't upload file, because file with path [%s] and name [%s] already exist".formatted(newFile.getPath(), newFile.getObjectName()));
         }

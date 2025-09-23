@@ -4,6 +4,7 @@ import com.example.dto.DownloadResult;
 import com.example.dto.ResourceInfoDto;
 import com.example.dto.enums.ResourceType;
 import com.example.exception.StorageException;
+import com.example.exception.resource.ResourceAlreadyExist;
 import com.example.exception.resource.ResourceException;
 import com.example.exception.resource.ResourceNotFoundException;
 import com.example.exception.resource.ResourceTypeException;
@@ -81,16 +82,9 @@ public class DirectoryResourceService extends AbstractResourceService implements
     @Override
     public List<ResourceInfoDto> getDirectoryDetails(StorageKey storageKey) {
         validateDirectory(storageKey);
-//        var a = StreamSupport.stream(storageService.listObjects(storageKey, false).spliterator(), false)
-//                .map(result -> process(result))
-//                .toList();
-//
-//        var b = StreamSupport.stream(storageService.listObjects(storageKey, false).spliterator(), false)
-//                .map(result -> process(result))
-//                .filter(resourceInfoDto -> !(resourceInfoDto.getName().equals(storageKey.getObjectName())
-//                        && resourceInfoDto.getPath().equals(storageKey.getPrefix())))
-//                .toList();
-
+        if (!storageService.doesObjectExist(storageKey)) {
+            throw new ResourceNotFoundException("Get directory details exception: the directory [%s] doesn't exist".formatted(storageKey.getPath()));
+        }
         return StreamSupport.stream(storageService.listObjects(storageKey, false).spliterator(), false)
                 .map(result -> process(result))
                 .filter(resourceInfoDto -> !(resourceInfoDto.getPath().equals(storageKey.getPrefix())
@@ -119,7 +113,7 @@ public class DirectoryResourceService extends AbstractResourceService implements
         }
         validateDirectory(sourceStorageKey);
         if (storageService.doesObjectExist(targetStorageKey)) {
-            throw new ResourceException("Move file exception: the file [%s] already exist".formatted(targetStorageKey.getPath()));
+            throw new ResourceAlreadyExist("Move file exception: the file [%s] already exist".formatted(targetStorageKey.getPath()));
         }
         storageService.getObjectsNames(sourceStorageKey, true)
                 .forEach(oldPath -> moveObject(oldPath, sourceStorageKey, targetStorageKey));

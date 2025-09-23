@@ -1,6 +1,8 @@
 package com.example.exception.resource;
 
-public class ResourceTypeException extends RuntimeException {
+import com.example.exception.StorageException;
+
+public class ResourceTypeException extends StorageException {
   public ResourceTypeException(String message) {
     super(message);
   }

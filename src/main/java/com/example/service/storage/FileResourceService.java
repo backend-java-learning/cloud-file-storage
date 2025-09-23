@@ -3,6 +3,7 @@ package com.example.service.storage;
 import com.example.dto.DownloadResult;
 import com.example.dto.ResourceInfoDto;
 import com.example.dto.enums.ResourceType;
+import com.example.exception.resource.ResourceAlreadyExist;
 import com.example.exception.resource.ResourceException;
 import com.example.exception.resource.ResourceTypeException;
 import com.example.mapper.ResourceInfoMapper;
@@ -40,7 +41,7 @@ public class FileResourceService extends AbstractResourceService {
         }
         validateFile(sourcePrefix);
         if (storageService.doesObjectExist(targetPrefix)) {
-            throw new ResourceException("Move file exception: the file [%s] already exist".formatted(targetPrefix.getPath()));
+            throw new ResourceAlreadyExist("Move file exception: the file [%s] already exist".formatted(targetPrefix.getPath()));
         }
         storageService.moveObject(sourcePrefix, targetPrefix);
         return getInfo(targetPrefix);

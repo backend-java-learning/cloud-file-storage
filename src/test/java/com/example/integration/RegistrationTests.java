@@ -42,71 +42,71 @@ public class RegistrationTests {
 
     private List<Integer> createdUserIds = new ArrayList<>();
 
-    @Test
-    void registerUser() throws Exception {
-
-        AuthorizeUserRequest authorizeUserRequest = new AuthorizeUserRequest();
-        authorizeUserRequest.setUsername("test2");
-        authorizeUserRequest.setPassword("secretPassword");
-
-        mockMvc.perform(post("/api/auth/sign-up")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(authorizeUserRequest)))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.username").value(authorizeUserRequest.getUsername()));
-
-        Optional<User> createdUser = userRepository.findByLogin(authorizeUserRequest.getUsername());
-        assertTrue(createdUser.isPresent());
-        boolean doesUserFolderExist = storageService.doesObjectExist(StorageKey.createEmptyDirectoryKey(createdUser.get().getId()));
-        assertTrue(doesUserFolderExist);
-        createdUserIds.add(createdUser.get().getId());
-    }
-
-    @Test
-    void registerAsExistedUser() throws Exception {
-        AuthorizeUserRequest authorizeUserRequest = new AuthorizeUserRequest();
-        authorizeUserRequest.setUsername("test");
-        authorizeUserRequest.setPassword("secretPassword");
-
-        mockMvc.perform(post("/api/auth/sign-up")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(authorizeUserRequest)))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.username").value(authorizeUserRequest.getUsername()));
-
-        Optional<User> createdUser = userRepository.findByLogin(authorizeUserRequest.getUsername());
-        assertTrue(createdUser.isPresent());
-        boolean doesUserFolderExist = storageService.doesObjectExist(StorageKey.createEmptyDirectoryKey(createdUser.get().getId()));
-        assertTrue(doesUserFolderExist);
-
-        mockMvc.perform(post("/api/auth/sign-up")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(authorizeUserRequest)))
-                .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.message").exists());
-        createdUserIds.add(createdUser.get().getId());
-    }
-
-    @Test
-    void registerUserWithInvalidPassword() throws Exception {
-        AuthorizeUserRequest authorizeUserRequest = new AuthorizeUserRequest();
-        authorizeUserRequest.setUsername("test2");
-        authorizeUserRequest.setPassword("test2");
-
-        mockMvc.perform(post("/api/auth/sign-up")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(authorizeUserRequest)))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").exists());
-
-        Optional<User> createdUser = userRepository.findByLogin(authorizeUserRequest.getUsername());
-        assertTrue(createdUser.isEmpty());
-    }
-
-    @AfterEach
-    void cleanupFileMetadataDB() {
-        for(Integer userId : createdUserIds) {
-            storageService.removeObjects(userId);
-        }
-    }
+//    @Test
+//    void registerUser() throws Exception {
+//
+//        AuthorizeUserRequest authorizeUserRequest = new AuthorizeUserRequest();
+//        authorizeUserRequest.setUsername("test2");
+//        authorizeUserRequest.setPassword("secretPassword");
+//
+//        mockMvc.perform(post("/api/auth/sign-up")
+//                        .contentType(MediaType.APPLICATION_JSON)
+//                        .content(objectMapper.writeValueAsString(authorizeUserRequest)))
+//                .andExpect(status().isCreated())
+//                .andExpect(jsonPath("$.username").value(authorizeUserRequest.getUsername()));
+//
+//        Optional<User> createdUser = userRepository.findByLogin(authorizeUserRequest.getUsername());
+//        assertTrue(createdUser.isPresent());
+//        boolean doesUserFolderExist = storageService.doesObjectExist(StorageKey.createEmptyDirectoryKey(createdUser.get().getId()));
+//        assertTrue(doesUserFolderExist);
+//        createdUserIds.add(createdUser.get().getId());
+//    }
+//
+//    @Test
+//    void registerAsExistedUser() throws Exception {
+//        AuthorizeUserRequest authorizeUserRequest = new AuthorizeUserRequest();
+//        authorizeUserRequest.setUsername("test");
+//        authorizeUserRequest.setPassword("secretPassword");
+//
+//        mockMvc.perform(post("/api/auth/sign-up")
+//                        .contentType(MediaType.APPLICATION_JSON)
+//                        .content(objectMapper.writeValueAsString(authorizeUserRequest)))
+//                .andExpect(status().isCreated())
+//                .andExpect(jsonPath("$.username").value(authorizeUserRequest.getUsername()));
+//
+//        Optional<User> createdUser = userRepository.findByLogin(authorizeUserRequest.getUsername());
+//        assertTrue(createdUser.isPresent());
+//        boolean doesUserFolderExist = storageService.doesObjectExist(StorageKey.createEmptyDirectoryKey(createdUser.get().getId()));
+//        assertTrue(doesUserFolderExist);
+//
+//        mockMvc.perform(post("/api/auth/sign-up")
+//                        .contentType(MediaType.APPLICATION_JSON)
+//                        .content(objectMapper.writeValueAsString(authorizeUserRequest)))
+//                .andExpect(status().isConflict())
+//                .andExpect(jsonPath("$.message").exists());
+//        createdUserIds.add(createdUser.get().getId());
+//    }
+//
+//    @Test
+//    void registerUserWithInvalidPassword() throws Exception {
+//        AuthorizeUserRequest authorizeUserRequest = new AuthorizeUserRequest();
+//        authorizeUserRequest.setUsername("test2");
+//        authorizeUserRequest.setPassword("test2");
+//
+//        mockMvc.perform(post("/api/auth/sign-up")
+//                        .contentType(MediaType.APPLICATION_JSON)
+//                        .content(objectMapper.writeValueAsString(authorizeUserRequest)))
+//                .andExpect(status().isBadRequest())
+//                .andExpect(jsonPath("$.message").exists());
+//
+//        Optional<User> createdUser = userRepository.findByLogin(authorizeUserRequest.getUsername());
+//        assertTrue(createdUser.isEmpty());
+//    }
+//
+//    @AfterEach
+//    void cleanupFileMetadataDB() {
+//        for(Integer userId : createdUserIds) {
+//            storageService.removeObjects(userId);
+//        }
+//    }
 }

@@ -1,9 +1,44 @@
-networks:
-  minio_network:
-
 services:
+  backend:
+    build:
+      context: .
+    container_name: backend
+    expose:
+      - "8080"      # доступен только во внутренних сетях
+    environment:
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
+      - DB_URL=${DB_URL}
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
+      - MINIO_ROOT_USER=${MINIO_ROOT_USER}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
+      - MINIO_PORT=${MINIO_PORT}
+      - MINIO_URL=${MINIO_URL}
+      - MINIO_BUCKET=${MINIO_BUCKET}
+    depends_on:
+        - postgres
+        - redis
+        - minio
+    networks:
+      - frontend_net
+      - backend_net
+
+  frontend:
+    build:
+     context: ../cloud-storage-frontend
+    container_name: frontend
+    ports:
+      - "8080:80"   # наружу доступен только фронт
+    depends_on:
+      - backend
+    networks:
+      - frontend_net
+
   postgres:
     image: postgres
+    container_name: postgres
     ports:
       - "5431:5432"
     environment:
@@ -17,6 +52,8 @@ services:
       retries: 5
     volumes:
       - db-data:/var/lib/postgresql/data
+    networks:
+      - backend_net
 
   minio:
     container_name: minio
@@ -28,6 +65,7 @@ services:
       - "9001:9001"
     networks:
       - minio_network
+      - backend_net
     restart: always
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
@@ -38,6 +76,7 @@ services:
       interval: 30s
       timeout: 20s
       retries: 3
+
   redis:
     container_name: redis
     image: redis
@@ -46,7 +85,15 @@ services:
     volumes:
       - redis-data:/data
     command: [ "redis-server", "--appendonly", "yes" ]
+    networks:
+      - backend_net
 
+networks:
+  minio_network:
+  frontend_net:
+    driver: bridge
+  backend_net:
+    driver: bridge
 
 volumes:
   db-data:

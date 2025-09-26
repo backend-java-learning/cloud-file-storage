@@ -39,7 +39,7 @@ services:
     image: postgres
     container_name: postgres
     ports:
-      - "5431:5432"
+      - "5432"
     environment:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
@@ -60,7 +60,7 @@ services:
     volumes:
       - minio-storage:/data
     ports:
-      - "9000:9000"
+      - "9000"
       - "9001:9001"
     networks:
       - minio_network
@@ -80,7 +80,7 @@ services:
     container_name: redis
     image: redis
     ports:
-        - "6379:6379"
+        - "6379"
     volumes:
       - redis-data:/data
     command: [ "redis-server", "--appendonly", "yes" ]

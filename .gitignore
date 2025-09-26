@@ -19,6 +19,7 @@
 *.tar.gz
 *.rar
 
+1.env1
 .env
 
 !gradle-wrapper.jar

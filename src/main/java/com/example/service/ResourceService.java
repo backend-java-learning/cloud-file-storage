@@ -5,7 +5,6 @@ import com.example.dto.ResourceInfoDto;
 import com.example.models.StorageKey;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.OutputStream;
 import java.util.List;
 
 public interface ResourceService {

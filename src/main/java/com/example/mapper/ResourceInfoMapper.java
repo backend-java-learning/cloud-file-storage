@@ -1,7 +1,6 @@
 package com.example.mapper;
 
 import com.example.dto.ResourceInfoDto;
-import com.example.models.ResourceInfo;
 import com.example.models.StorageKey;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;

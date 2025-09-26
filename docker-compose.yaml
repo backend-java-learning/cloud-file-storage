@@ -61,7 +61,7 @@ services:
     volumes:
       - minio-storage:/data
     ports:
-      - "${MINIO_PORT}:9000"
+      - "9000:9000"
       - "9001:9001"
     networks:
       - minio_network

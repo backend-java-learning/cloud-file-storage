@@ -8,6 +8,8 @@ import com.example.models.StorageKey;
 import com.example.models.User;
 import com.example.repository.UserRepository;
 import com.example.service.minio.StorageService;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,9 +28,12 @@ public class UserService {
     private PasswordEncoder passwordEncoder;
     private StorageService storageService;
     private DirectoryService directoryService;
+    private AuthorizationService authorizationService;
 
     @Transactional
-    public AuthorizedUserResponse registerUser(AuthorizeUserRequest authorizeUserRequest) {
+    public AuthorizedUserResponse registerUser(AuthorizeUserRequest authorizeUserRequest,
+                                               HttpServletRequest request,
+                                               HttpServletResponse response) {
         Integer savedUserId = null;
         try {
             User user = userMapper.toUser(authorizeUserRequest);
@@ -36,7 +41,7 @@ public class UserService {
             User savedUser = userRepository.save(user);
             savedUserId = savedUser.getId();
             directoryService.createEmptyFolder(StorageKey.createEmptyDirectoryKey(savedUserId));
-            return userMapper.toAuthorizedUserResponse(savedUser);
+            return authorizationService.authenticate(authorizeUserRequest, request, response);
         } catch (DataIntegrityViolationException e) {
             throw new UserAlreadyExistsException("Пользователь с таким логином уже существует");
         } catch (Exception ex) {

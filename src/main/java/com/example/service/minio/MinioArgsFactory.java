@@ -3,15 +3,15 @@ package com.example.service.minio;
 import com.example.models.StorageKey;
 import io.minio.*;
 import io.minio.messages.DeleteObject;
-import org.springframework.beans.factory.annotation.Value;
+import lombok.RequiredArgsConstructor;
 
 import java.io.InputStream;
 import java.util.List;
 
+@RequiredArgsConstructor
 public class MinioArgsFactory {
 
-    @Value("${MINIO_BUCKET}")
-    private String bucket;
+    private final String bucket;
 
     public PutObjectArgs putObjectArgs(StorageKey key, InputStream is, long size, String contentType) {
         return PutObjectArgs.builder()

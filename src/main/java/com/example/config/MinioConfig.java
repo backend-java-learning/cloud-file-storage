@@ -1,28 +1,40 @@
 package com.example.config;
 
+import com.example.service.minio.MinioArgsFactory;
 import io.minio.MinioClient;
-import org.springframework.beans.factory.annotation.Value;
+import lombok.Getter;
+import lombok.Setter;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+@Getter
+@Setter
 @Configuration
+@ConfigurationProperties(prefix = "minio")
 public class MinioConfig {
 
-    @Value("${MINIO_URL}")
-    private String minioUrl;
-
-    @Value("${MINIO_ROOT_USER}")
+    private String url;
     private String accessKey;
-
-    @Value("${MINIO_ROOT_PASSWORD}")
     private String secretKey;
+    private String bucketName;
 
 
     @Bean
     public MinioClient minioClient() {
         return MinioClient.builder()
-                .endpoint(minioUrl)
+                .endpoint(url)
                 .credentials(accessKey, secretKey)
                 .build();
+    }
+
+    @Bean
+    public String bucket() {
+        return bucketName;
+    }
+
+    @Bean
+    public MinioArgsFactory minioArgsFactory() {
+        return new MinioArgsFactory(bucketName);
     }
 }

@@ -13,7 +13,6 @@ import io.minio.messages.DeleteObject;
 import io.minio.messages.Item;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.InputStreamSource;
 import org.springframework.stereotype.Service;
@@ -30,8 +29,7 @@ import java.util.stream.StreamSupport;
 @RequiredArgsConstructor
 public class StorageService {
 
-    @Value("${MINIO_BUCKET}")
-    private String bucket;
+    private final String bucket;
     private final MinioClient minioClient;
     private final MinioArgsFactory minioArgsFactory;
     private final ResourceInfoMapper resourceInfoMapper;

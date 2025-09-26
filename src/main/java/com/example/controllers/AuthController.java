@@ -25,14 +25,16 @@ public class AuthController {
     private AuthorizationService authorizationService;
 
     @PostMapping("/sign-up")
-    public ResponseEntity<AuthorizedUserResponse> signUp(@Valid @RequestBody AuthorizeUserRequest authorizeUserRequest) {
+    public ResponseEntity<AuthorizedUserResponse> signUp(@Valid @RequestBody AuthorizeUserRequest authorizeUserRequest,
+                                                         HttpServletRequest request,
+                                                         HttpServletResponse response) {
         log.info("Received sign up request: {}", authorizeUserRequest.getUsername());
-        AuthorizedUserResponse createdUser = userService.registerUser(authorizeUserRequest);
+        AuthorizedUserResponse createdUser = userService.registerUser(authorizeUserRequest, request, response);
         return ResponseEntity.status(HttpStatus.CREATED).body(createdUser);
     }
 
     @PostMapping("/sign-in")
-    public ResponseEntity<AuthorizedUserResponse> signIn(@RequestBody AuthorizeUserRequest authorizeUserRequest,
+    public ResponseEntity<AuthorizedUserResponse> signIn(@Valid @RequestBody AuthorizeUserRequest authorizeUserRequest,
                                                          HttpServletRequest request,
                                                          HttpServletResponse response) {
         log.info("Received sign in request: {}", authorizeUserRequest.getUsername());
